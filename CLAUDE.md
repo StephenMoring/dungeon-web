@@ -20,12 +20,23 @@ src/
     App.tsx                    # RouterProvider wrapper
     routes.tsx                 # All routes defined here
     pages/                     # One file per route
+      home.tsx
+      campaign-list.tsx
+      character-creation.tsx
+      history.tsx
+      settings.tsx
+      not-found.tsx
+      campaign/                  # Campaign session page + co-located components
+        index.tsx
+        chat-interface.tsx
+        character-sheet.tsx
+        notes-section.tsx
+        dice-roller.tsx
     components/
-      ui/                      # shadcn/ui primitives only — don't add custom logic here
-      layout.tsx               # Root layout (ambient bg, particles)
-      chat-interface.tsx       # DM chat panel
-      character-sheet.tsx      # Character stats panel
-      notes-section.tsx        # Campaign notes panel
+      ui/                        # shadcn/ui primitives only — don't add custom logic here
+      shared/                    # Custom components reusable across pages
+        layout.tsx
+        image-with-fallback.tsx
   styles/                      # Global CSS (index, theme, fonts, tailwind)
 ```
 
