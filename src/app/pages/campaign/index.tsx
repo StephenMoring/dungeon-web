@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { useNavigate, useParams } from "react-router";
-import { CharacterSheet, CharacterData } from "../components/character-sheet";
-import { ChatInterface } from "../components/chat-interface";
-import { NotesSection } from "../components/notes-section";
-import { Button } from "../components/ui/button";
+import { CharacterSheet, CharacterData } from "./character-sheet";
+import { ChatInterface } from "./chat-interface";
+import { NotesSection } from "./notes-section";
+import { Button } from "../../components/ui/button";
 import { ArrowLeft, Menu } from "lucide-react";
 
 export function Campaign() {
