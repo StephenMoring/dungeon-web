@@ -42,7 +42,7 @@ src/app/
 | From | To |
 |------|----|
 | `components/layout.tsx` | `components/shared/layout.tsx` |
-| `components/figma/ImageWithFallback.tsx` | `components/shared/image-with-fallback.tsx` |
+| `components/figma/ImageWithFallback.tsx` | `components/shared/image-with-fallback.tsx` | (no current consumers — moved for structural consistency) |
 | `components/chat-interface.tsx` | `pages/campaign/chat-interface.tsx` |
 | `components/character-sheet.tsx` | `pages/campaign/character-sheet.tsx` |
 | `components/notes-section.tsx` | `pages/campaign/notes-section.tsx` |
@@ -51,10 +51,10 @@ src/app/
 
 ## Import Updates
 
-- `routes.tsx`: update Layout import path, update Campaign import path
-- `pages/campaign/index.tsx`: update imports for chat-interface, character-sheet, notes-section
-- `pages/campaign/chat-interface.tsx`: update import for dice-roller
-- Any other files importing moved components
+- `routes.tsx`: update Layout import to `./components/shared/layout`. The Campaign import (`./pages/campaign`) requires no change — Vite/TypeScript resolves bare directory imports to `index.tsx` automatically.
+- `pages/campaign/index.tsx`: update imports for `chat-interface`, `character-sheet`, `notes-section` (now relative siblings), and update `../../components/ui/button` (depth increases by one level).
+- `pages/campaign/chat-interface.tsx`: update import for `dice-roller` (now a relative sibling).
+- No other files import any of the moved components (confirmed by audit).
 
 ## Conventions (post-restructure)
 

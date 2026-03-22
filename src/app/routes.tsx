@@ -6,7 +6,7 @@ import { CampaignList } from "./pages/campaign-list";
 import { History } from "./pages/history";
 import { Settings } from "./pages/settings";
 import { NotFound } from "./pages/not-found";
-import { Layout } from "./components/layout";
+import { Layout } from "./components/shared/layout";
 
 export const router = createBrowserRouter([
   {
