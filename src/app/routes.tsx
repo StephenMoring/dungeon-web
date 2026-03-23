@@ -22,7 +22,7 @@ export const router = createBrowserRouter([
         Component: CharacterCreation,
       },
       {
-        path: "campaign/:id",
+        path: "adventure/:id",
         Component: Campaign,
       },
       {

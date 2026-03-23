@@ -1,54 +1,18 @@
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Link, useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { ArrowLeft, Plus, Trash2, Calendar, Sword } from "lucide-react";
+import { getCampaigns, type Campaign } from "../api/campaigns";
 
 export function CampaignList() {
   const navigate = useNavigate();
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
 
-  const campaigns = [
-    {
-      id: "1",
-      name: "The Lost Temple",
-      character: "Aldrin the Brave",
-      class: "Paladin",
-      level: 5,
-      lastPlayed: "2024-03-22",
-      sessions: 12,
-      location: "Temple of the Forgotten Gods"
-    },
-    {
-      id: "2",
-      name: "Dragon's Lair",
-      character: "Mystara",
-      class: "Wizard",
-      level: 12,
-      lastPlayed: "2024-03-21",
-      sessions: 28,
-      location: "Crimson Peak Mountains"
-    },
-    {
-      id: "3",
-      name: "Cursed Forest",
-      character: "Shadow",
-      class: "Rogue",
-      level: 3,
-      lastPlayed: "2024-03-19",
-      sessions: 5,
-      location: "Whispering Woods"
-    },
-    {
-      id: "4",
-      name: "Sea of Storms",
-      character: "Captain Finn",
-      class: "Fighter",
-      level: 8,
-      lastPlayed: "2024-03-15",
-      sessions: 18,
-      location: "The Maelstrom"
-    },
-  ];
+  useEffect(() => {
+    getCampaigns().then(setCampaigns);
+  }, []);
 
   return (
     <div className="h-full p-8 overflow-auto">
@@ -98,9 +62,7 @@ export function CampaignList() {
                       </CardTitle>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Sword className="h-4 w-4 text-emerald-400" />
-                        <span>
-                          {campaign.character} • Lv. {campaign.level} {campaign.class}
-                        </span>
+                        <span>{campaign.theme}</span>
                       </div>
                     </div>
                     <Button
@@ -117,20 +79,19 @@ export function CampaignList() {
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="h-4 w-4 text-blue-400" />
                       <span className="text-muted-foreground">
-                        Last played: {campaign.lastPlayed}
+                        Checkpoints: {campaign.campaign_checkpoints.length}
                       </span>
                     </div>
                     <div className="text-sm">
-                      <span className="text-muted-foreground">Sessions: </span>
-                      <span className="font-medium">{campaign.sessions}</span>
+                      <span className="text-muted-foreground">Characters: </span>
+                      <span className="font-medium">{campaign.characters.length}</span>
                     </div>
                     <div className="text-sm">
-                      <span className="text-muted-foreground">Current Location: </span>
-                      <span className="font-medium text-amber-400">{campaign.location}</span>
+                      <span className="text-muted-foreground">Description: </span>
+                      <span className="font-medium text-amber-400">{campaign.description}</span>
                     </div>
                   </div>
-
-                  <Link to={`/campaign/${campaign.id}`}>
+                  <Link to={`/adventure/${campaign.id}`}>
                     <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
                       Continue Adventure
                     </Button>

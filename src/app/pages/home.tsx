@@ -1,15 +1,17 @@
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Link } from "react-router";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Sparkles, Scroll, BookOpen, History, Settings, Plus } from "lucide-react";
+import { getCampaigns, type Campaign } from "../api/campaigns";
 
 export function Home() {
-  const recentCampaigns = [
-    { id: "1", name: "The Lost Temple", lastPlayed: "2 hours ago", level: 5 },
-    { id: "2", name: "Dragon's Lair", lastPlayed: "1 day ago", level: 12 },
-    { id: "3", name: "Cursed Forest", lastPlayed: "3 days ago", level: 3 },
-  ];
+  const [recentCampaigns, setRecentCampaigns] = useState<Campaign[]>([]);
+
+  useEffect(() => {
+    getCampaigns().then(setRecentCampaigns);
+  }, []);
 
   return (
     <div className="h-full flex items-center justify-center p-8">
@@ -81,7 +83,7 @@ export function Home() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 + idx * 0.1 }}
                 >
-                  <Link to={`/campaign/${campaign.id}`}>
+                  <Link to={`/adventure/${campaign.id}`}>
                     <Card className="border border-border/50 hover:border-purple-500/50 transition-all cursor-pointer group">
                       <CardContent className="flex items-center justify-between p-4">
                         <div>
@@ -89,7 +91,7 @@ export function Home() {
                             {campaign.name}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            Level {campaign.level} • Last played {campaign.lastPlayed}
+                            {campaign.theme}
                           </p>
                         </div>
                         <Button variant="ghost" size="sm">

@@ -6,6 +6,7 @@ import { ScrollArea } from "../../components/ui/scroll-area";
 import { Send, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { DiceRoller } from "./dice-roller";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   id: string;
@@ -58,13 +59,12 @@ export function ChatInterface({ onUserMessage }: ChatInterfaceProps) {
       return "You venture east toward the red glow. The air grows warmer as you approach. You enter a chamber with glowing red crystals embedded in the walls. In the center of the room stands a stone pedestal with an ornate dagger. However, you notice scorch marks on the floor around the pedestal. What's your next move?";
     } else if (lowerMessage.includes("roll") || lowerMessage.includes("d20")) {
       const roll = Math.floor(Math.random() * 20) + 1;
-      return `You rolled a ${roll}! ${
-        roll >= 15
-          ? "Success! You notice that the bridge is trapped with a pressure plate mechanism. You carefully disarm it and cross safely."
-          : roll >= 10
+      return `You rolled a ${roll}! ${roll >= 15
+        ? "Success! You notice that the bridge is trapped with a pressure plate mechanism. You carefully disarm it and cross safely."
+        : roll >= 10
           ? "Partial success. You sense something is off about the bridge but can't quite pinpoint what. Proceed with caution."
           : "The bridge appears safe to you, but your instincts tell you to be careful anyway."
-      }`;
+        }`;
     } else if (
       lowerMessage.includes("attack") ||
       lowerMessage.includes("fight")
@@ -94,7 +94,7 @@ export function ChatInterface({ onUserMessage }: ChatInterfaceProps) {
     }
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
 
     const userMessage: Message = {
@@ -109,17 +109,22 @@ export function ChatInterface({ onUserMessage }: ChatInterfaceProps) {
     setInput("");
     setIsTyping(true);
 
-    // Simulate DM thinking time
-    setTimeout(() => {
-      const dmResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "dm",
-        content: generateDMResponse(input),
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, dmResponse]);
+    try {
+      const response = await fetch("/api/characters/3/turns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: input }),
+      });
+
+      const content = await response.text();
+
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now().toString(), role: "dm", content, timestamp: new Date() },
+      ]);
+    } finally {
       setIsTyping(false);
-    }, 1000 + Math.random() * 1000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -153,16 +158,14 @@ export function ChatInterface({ onUserMessage }: ChatInterfaceProps) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className={`flex ${
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  }`}
+                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"
+                    }`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-lg p-4 shadow-lg transition-all hover:shadow-xl ${
-                      message.role === "user"
-                        ? "bg-gradient-to-br from-blue-600 to-purple-600 text-white border border-blue-400/20"
-                        : "bg-gradient-to-br from-muted to-muted/50 border border-purple-500/10"
-                    }`}
+                    className={`max-w-[80%] rounded-lg p-4 shadow-lg transition-all hover:shadow-xl ${message.role === "user"
+                      ? "bg-gradient-to-br from-blue-600 to-purple-600 text-white border border-blue-400/20"
+                      : "bg-gradient-to-br from-muted to-muted/50 border border-purple-500/10"
+                      }`}
                   >
                     <div className="text-xs opacity-70 mb-1 flex items-center gap-1">
                       {message.role === "dm" && (
@@ -170,8 +173,8 @@ export function ChatInterface({ onUserMessage }: ChatInterfaceProps) {
                       )}
                       {message.role === "dm" ? "Dungeon Master" : "You"}
                     </div>
-                    <div className="text-sm leading-relaxed">
-                      {message.content}
+                    <div className="text-sm leading-relaxed prose prose-invert prose-sm max-w-none">
+                      <ReactMarkdown>{message.content.replace(/\\n/g, "\n")}</ReactMarkdown>
                     </div>
                   </div>
                 </motion.div>

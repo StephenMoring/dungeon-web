@@ -46,7 +46,7 @@ export function CharacterCreation() {
 
   const handleCreate = () => {
     // In a real app, this would save the character
-    navigate("/campaign/new");
+    navigate("/adventure/new");
   };
 
   const isValid = name && selectedClass && selectedRace && selectedBackground;
