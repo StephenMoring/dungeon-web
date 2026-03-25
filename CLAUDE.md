@@ -37,6 +37,8 @@ src/
       shared/                    # Custom components reusable across pages
         layout.tsx
         image-with-fallback.tsx
+    context/                     # React contexts
+      auth-context.tsx           # JWT auth state, useAuth hook
   styles/                      # Global CSS (index, theme, fonts, tailwind)
 ```
 
