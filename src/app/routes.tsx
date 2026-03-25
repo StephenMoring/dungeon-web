@@ -7,35 +7,51 @@ import { History } from "./pages/history";
 import { Settings } from "./pages/settings";
 import { NotFound } from "./pages/not-found";
 import { Layout } from "./components/shared/layout";
+import { ProtectedRoute } from "./components/shared/protected-route";
+import { Landing } from "./pages/landing";
+import { AuthCallback } from "./pages/auth-callback";
 
 export const router = createBrowserRouter([
+  {
+    path: "/",
+    Component: Landing,
+  },
+  {
+    path: "/auth/callback",
+    Component: AuthCallback,
+  },
   {
     path: "/",
     Component: Layout,
     children: [
       {
-        index: true,
-        Component: Home,
-      },
-      {
-        path: "character/new",
-        Component: CharacterCreation,
-      },
-      {
-        path: "adventure/:id",
-        Component: Campaign,
-      },
-      {
-        path: "campaigns",
-        Component: CampaignList,
-      },
-      {
-        path: "history",
-        Component: History,
-      },
-      {
-        path: "settings",
-        Component: Settings,
+        element: <ProtectedRoute />,
+        children: [
+          {
+            path: "dashboard",
+            Component: Home,
+          },
+          {
+            path: "character/new",
+            Component: CharacterCreation,
+          },
+          {
+            path: "adventure/:id",
+            Component: Campaign,
+          },
+          {
+            path: "campaigns",
+            Component: CampaignList,
+          },
+          {
+            path: "history",
+            Component: History,
+          },
+          {
+            path: "settings",
+            Component: Settings,
+          },
+        ],
       },
       {
         path: "*",
