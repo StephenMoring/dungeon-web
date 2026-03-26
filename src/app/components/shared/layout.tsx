@@ -1,5 +1,6 @@
 import { Outlet } from "react-router";
 import { motion } from "motion/react";
+import { Navbar } from "./navbar";
 
 export function Layout() {
   return (
@@ -30,8 +31,11 @@ export function Layout() {
         />
       ))}
       
-      <div className="relative z-10 h-full">
-        <Outlet />
+      <div className="relative z-10 h-full flex flex-col">
+        <Navbar />
+        <main className="flex-1 overflow-hidden">
+          <Outlet />
+        </main>
       </div>
     </div>
   );
