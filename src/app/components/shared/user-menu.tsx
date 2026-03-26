@@ -12,7 +12,6 @@ export function UserMenu() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [avatarError, setAvatarError] = useState(false);
-  const [open, setOpen] = useState(false);
 
   if (!user) return null;
 
@@ -41,7 +40,7 @@ export function UserMenu() {
   );
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           aria-label="Open user menu"
