@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { AuthContext } from "../../context/auth-context";
 import { UserMenu } from "./user-menu";
@@ -64,12 +64,13 @@ describe("UserMenu", () => {
   it("calls logout and navigates to / when Logout is clicked", async () => {
     const { auth, logout } = makeAuth();
     renderMenu(auth);
-    // Open dropdown
+    // Open dropdown — Radix DropdownMenu listens to pointerdown, not click
+    const trigger = screen.getByRole("button", { name: "Open user menu" });
     await act(async () => {
-      screen.getByRole("button", { name: "Open user menu" }).click();
+      fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
     });
     await act(async () => {
-      screen.getByText("Logout").click();
+      fireEvent.click(screen.getByText("Logout"));
     });
     expect(logout).toHaveBeenCalledOnce();
     expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });

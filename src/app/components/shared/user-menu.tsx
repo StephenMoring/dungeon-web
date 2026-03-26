@@ -36,7 +36,7 @@ export function UserMenu() {
     />
   ) : (
     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-semibold select-none">
-      {user.username[0].toUpperCase()}
+      {(user.username[0] ?? "?").toUpperCase()}
     </div>
   );
 
@@ -45,7 +45,6 @@ export function UserMenu() {
       <DropdownMenuTrigger asChild>
         <button
           aria-label="Open user menu"
-          onClick={() => setOpen((prev) => !prev)}
           className="rounded-full focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-background"
         >
           {avatarElement}
