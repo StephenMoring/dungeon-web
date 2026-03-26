@@ -10,7 +10,11 @@ export interface Campaign {
 }
 
 export async function getCampaigns(): Promise<Campaign[]> {
-  const response = await fetch(`${API_URL}/campaigns/`);
+  const response = await fetch(`${API_URL}/campaigns/`, {
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem("dungeon_jwt")}`
+    }
+  });
   if (!response.ok) {
     throw new Error(`Failed to fetch campaigns: ${response.status}`);
   }
