@@ -18,12 +18,10 @@ const BREADCRUMBS: BreadcrumbEntry[] = [
 export function Navbar() {
   const { pathname } = useLocation();
   const entry = BREADCRUMBS.find((b) => b.match(pathname)) ?? null;
-  const isOnDashboard = pathname === "/dashboard";
 
   return (
     <nav
-      className="h-14 flex items-center justify-between px-6 border-b border-white/5"
-      style={{ background: "rgba(255,255,255,0.04)", backdropFilter: "blur(12px)" }}
+      className="h-14 flex items-center justify-between px-6 border-b border-white/5 bg-white/[0.04] backdrop-blur-md"
     >
       {/* Left: icon + breadcrumb */}
       <div className="flex items-center gap-3">
@@ -39,13 +37,9 @@ export function Navbar() {
               <span className="text-muted-foreground">Dashboard</span>
             ) : (
               <>
-                {isOnDashboard ? (
-                  <span className="text-muted-foreground">Dashboard</span>
-                ) : (
-                  <Link to="/dashboard" className="text-violet-400 hover:text-violet-300 transition-colors">
-                    Dashboard
-                  </Link>
-                )}
+                <Link to="/dashboard" className="text-violet-400 hover:text-violet-300 transition-colors">
+                  Dashboard
+                </Link>
                 <span className="text-muted-foreground/40">/</span>
                 <span className="text-foreground/90">{entry.segments[1]}</span>
               </>
