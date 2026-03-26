@@ -15,11 +15,7 @@ export function UserMenu() {
 
   if (!user) return null;
 
-  const avatarUrl = user.avatar
-    ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
-    : null;
-
-  const showImage = avatarUrl !== null && !avatarError;
+  const showImage = user.avatar !== null && !avatarError;
 
   function handleLogout() {
     logout();
@@ -28,7 +24,7 @@ export function UserMenu() {
 
   const avatarElement = showImage ? (
     <img
-      src={avatarUrl}
+      src={user.avatar ?? undefined}
       alt={user.username}
       className="w-8 h-8 rounded-full"
       onError={() => setAvatarError(true)}

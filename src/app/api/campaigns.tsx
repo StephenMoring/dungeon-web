@@ -18,7 +18,7 @@ export async function getCampaigns(): Promise<Campaign[]> {
   if (!response.ok) {
     throw new Error(`Failed to fetch campaigns: ${response.status}`);
   }
-  const campaigns = response.json();
+  const campaigns = await response.json();
   console.log(campaigns);
   return campaigns;
 }

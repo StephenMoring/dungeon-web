@@ -7,7 +7,8 @@
     "build": "vite build",
     "dev": "vite",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "generate-types": "openapi-typescript http://localhost:8000/openapi.json -o src/types/api.ts"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -75,6 +76,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@vitejs/plugin-react": "4.7.0",
     "jsdom": "^29.0.1",
+    "openapi-typescript": "^7.13.0",
     "tailwindcss": "4.1.12",
     "vite": "^6.4.1",
     "vitest": "^4.1.1"

@@ -4,13 +4,15 @@ import { Link } from "react-router";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Sparkles, Scroll, BookOpen, History, Settings, Plus } from "lucide-react";
-import { getCampaigns, type Campaign } from "../api/campaigns";
+import { getCharacters, type CharacterWithCampaign } from "../api/characters";
 
 export function Home() {
-  const [recentCampaigns, setRecentCampaigns] = useState<Campaign[]>([]);
+  const [characters, setCharacters] = useState<CharacterWithCampaign[]>([]);
 
   useEffect(() => {
-    getCampaigns().then(setRecentCampaigns);
+    getCharacters()
+      .then((data) => setCharacters(data.filter((item) => item.character.campaign_id !== null)))
+      .catch(console.error);
   }, []);
 
   return (
@@ -64,8 +66,8 @@ export function Home() {
           </Link>
         </div>
 
-        {/* Recent Campaigns */}
-        {recentCampaigns.length > 0 && (
+        {/* Recent Characters */}
+        {characters.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -76,22 +78,22 @@ export function Home() {
               Continue Your Adventure
             </h2>
             <div className="space-y-3">
-              {recentCampaigns.map((campaign, idx) => (
+              {characters.map((item, idx) => (
                 <motion.div
-                  key={campaign.id}
+                  key={item.character.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 + idx * 0.1 }}
                 >
-                  <Link to={`/adventure/${campaign.id}`}>
+                  <Link to={`/adventure/${item.character.campaign_id}`}>
                     <Card className="border border-border/50 hover:border-purple-500/50 transition-all cursor-pointer group">
                       <CardContent className="flex items-center justify-between p-4">
                         <div>
                           <h3 className="font-semibold group-hover:text-purple-400 transition-colors">
-                            {campaign.name}
+                            {item.character.name}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            {campaign.theme}
+                            {item.character.hero_class}{item.campaign ? ` · ${item.campaign.name}` : ""}
                           </p>
                         </div>
                         <Button variant="ghost" size="sm">

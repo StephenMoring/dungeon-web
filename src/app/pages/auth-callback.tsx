@@ -5,9 +5,16 @@ import type { User } from "@/app/context/auth-context";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 
+interface BackendUser {
+  id: number;
+  discord_id: string;
+  username: string;
+  avatar_url: string;
+}
+
 interface CallbackResponse {
   jwt: string;
-  user: User;
+  user: BackendUser;
 }
 
 export function AuthCallback() {
@@ -37,7 +44,13 @@ export function AuthCallback() {
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
         return res.json() as Promise<CallbackResponse>;
       })
-      .then(({ jwt, user }) => {
+      .then(({ jwt, user: backendUser }) => {
+        const user: User = {
+          id: String(backendUser.id),
+          username: backendUser.username,
+          avatar: backendUser.avatar_url,
+          email: null,
+        };
         login(jwt, user);
         const from = sessionStorage.getItem("dungeon_redirect_after_login") ?? "/dashboard";
         sessionStorage.removeItem("dungeon_redirect_after_login");
