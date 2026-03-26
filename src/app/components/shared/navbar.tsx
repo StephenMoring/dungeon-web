@@ -17,7 +17,7 @@ const BREADCRUMBS: BreadcrumbEntry[] = [
 
 export function Navbar() {
   const { pathname } = useLocation();
-  const entry = BREADCRUMBS.find((b) => b.match(pathname)) ?? null;
+  const entry = BREADCRUMBS.find((b) => b.match(pathname));
 
   return (
     <nav
