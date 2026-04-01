@@ -1,55 +1,108 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { ScrollArea } from "../components/ui/scroll-area";
-import { ArrowLeft, Wand2 } from "lucide-react";
+import { Textarea } from "../components/ui/textarea";
+import { ArrowLeft, Sparkles, Loader2 } from "lucide-react";
+import { getClasses, getRaces, createCharacterPreview, createCharacter } from "../api/characters";
+import type { HeroClass, Race, CharacterPreview } from "../api/characters";
+import { useAuth } from "../context/auth-context";
 
-const CLASSES = ["Barbarian", "Bard", "Cleric", "Druid", "Fighter", "Monk", "Paladin", "Ranger", "Rogue", "Sorcerer", "Warlock", "Wizard"];
-const RACES = ["Human", "Elf", "Dwarf", "Halfling", "Dragonborn", "Gnome", "Half-Elf", "Half-Orc", "Tiefling"];
 const BACKGROUNDS = ["Acolyte", "Criminal", "Folk Hero", "Noble", "Sage", "Soldier", "Outlander", "Entertainer"];
+
+const EMPTY_STATS = {
+  strength: 0,
+  perception: 0,
+  endurance: 0,
+  charisma: 0,
+  intelligence: 0,
+  agility: 0,
+  luck: 0,
+};
 
 export function CharacterCreation() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedRace, setSelectedRace] = useState("");
   const [selectedBackground, setSelectedBackground] = useState("");
-  const [stats, setStats] = useState({
-    strength: 10,
-    dexterity: 10,
-    constitution: 10,
-    intelligence: 10,
-    wisdom: 10,
-    charisma: 10,
-  });
+  const [classes, setClasses] = useState<HeroClass[]>([]);
+  const [races, setRaces] = useState<Race[]>([]);
+  const [stats, setStats] = useState(EMPTY_STATS);
+  const [biography, setBiography] = useState("");
+  const [age, setAge] = useState<number | null>(null);
+  const [statsGenerated, setStatsGenerated] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  const rollStats = () => {
-    const rollDice = () => {
-      const rolls = [1, 2, 3, 4].map(() => Math.floor(Math.random() * 6) + 1);
-      rolls.sort((a, b) => b - a);
-      return rolls[0] + rolls[1] + rolls[2]; // Sum of highest 3
-    };
+  useEffect(() => {
+    getClasses().then(setClasses).catch(console.error);
+    getRaces().then(setRaces).catch(console.error);
+  }, []);
 
-    setStats({
-      strength: rollDice(),
-      dexterity: rollDice(),
-      constitution: rollDice(),
-      intelligence: rollDice(),
-      wisdom: rollDice(),
-      charisma: rollDice(),
-    });
-  };
+  const canGenerate = name && selectedClass && selectedRace && description;
+  const isValid = canGenerate && selectedBackground && statsGenerated;
 
-  const handleCreate = () => {
-    // In a real app, this would save the character
-    navigate("/adventure/new");
-  };
+  async function handleGenerate() {
+    if (!canGenerate) return;
+    setIsGenerating(true);
+    setGenerateError(null);
+    try {
+      const preview: CharacterPreview = await createCharacterPreview({
+        name,
+        description,
+        hero_class: selectedClass,
+        race: selectedRace,
+      });
+      setStats({
+        strength: preview.strength,
+        perception: preview.perception,
+        endurance: preview.endurance,
+        charisma: preview.charisma,
+        intelligence: preview.intelligence,
+        agility: preview.agility,
+        luck: preview.luck,
+      });
+      setBiography(preview.biography);
+      setAge(preview.age);
+      setStatsGenerated(true);
+    } catch (err) {
+      setGenerateError(err instanceof Error ? err.message : "Generation failed. Try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  }
 
-  const isValid = name && selectedClass && selectedRace && selectedBackground;
+  async function handleCreate() {
+    if (!user) return;
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      await createCharacter({
+        name,
+        description,
+        hero_class: selectedClass,
+        biography,
+        age: age!,
+        user_id: Number(user.id),
+        campaign_id: null,
+        id: null,
+        ...stats,
+      });
+      navigate("/dashboard");
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Failed to save character. Try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   return (
     <div className="h-full p-8 overflow-auto">
@@ -90,19 +143,30 @@ export function CharacterCreation() {
                 </div>
 
                 <div>
+                  <Label htmlFor="char-description">Description</Label>
+                  <Textarea
+                    id="char-description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe your character — background, personality, appearance..."
+                    className="resize-none"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
                   <Label>Class</Label>
                   <div className="grid grid-cols-3 gap-2 mt-2">
-                    {CLASSES.map((cls) => (
+                    {classes.map((cls) => (
                       <button
-                        key={cls}
-                        onClick={() => setSelectedClass(cls)}
-                        className={`px-3 py-2 text-sm rounded border transition-all ${
-                          selectedClass === cls
+                        key={cls.class_name}
+                        onClick={() => setSelectedClass(cls.class_name)}
+                        className={`px-3 py-2 text-sm rounded border transition-all ${selectedClass === cls.class_name
                             ? "bg-purple-600 border-purple-400 text-white"
                             : "bg-muted border-border hover:border-purple-500/50"
-                        }`}
+                          }`}
                       >
-                        {cls}
+                        {cls.class_name}
                       </button>
                     ))}
                   </div>
@@ -111,17 +175,16 @@ export function CharacterCreation() {
                 <div>
                   <Label>Race</Label>
                   <div className="grid grid-cols-3 gap-2 mt-2">
-                    {RACES.map((race) => (
+                    {races.map((r) => (
                       <button
-                        key={race}
-                        onClick={() => setSelectedRace(race)}
-                        className={`px-3 py-2 text-sm rounded border transition-all ${
-                          selectedRace === race
+                        key={r.race}
+                        onClick={() => setSelectedRace(r.race)}
+                        className={`px-3 py-2 text-sm rounded border transition-all ${selectedRace === r.race
                             ? "bg-emerald-600 border-emerald-400 text-white"
                             : "bg-muted border-border hover:border-emerald-500/50"
-                        }`}
+                          }`}
                       >
-                        {race}
+                        {r.race}
                       </button>
                     ))}
                   </div>
@@ -134,11 +197,10 @@ export function CharacterCreation() {
                       <button
                         key={bg}
                         onClick={() => setSelectedBackground(bg)}
-                        className={`px-3 py-2 text-sm rounded border transition-all ${
-                          selectedBackground === bg
+                        className={`px-3 py-2 text-sm rounded border transition-all ${selectedBackground === bg
                             ? "bg-amber-600 border-amber-400 text-white"
                             : "bg-muted border-border hover:border-amber-500/50"
-                        }`}
+                          }`}
                       >
                         {bg}
                       </button>
@@ -159,11 +221,33 @@ export function CharacterCreation() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Ability Scores</CardTitle>
-                  <Button onClick={rollStats} size="sm" className="gap-2">
-                    <Wand2 className="h-4 w-4" />
-                    Roll Stats
+                  <Button
+                    onClick={handleGenerate}
+                    size="sm"
+                    className="gap-2"
+                    disabled={!canGenerate || isGenerating}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        Generate
+                      </>
+                    )}
                   </Button>
                 </div>
+                {!statsGenerated && !isGenerating && (
+                  <p className="text-xs text-muted-foreground">
+                    Fill in your name, description, class, and race to generate stats
+                  </p>
+                )}
+                {generateError && (
+                  <p className="text-xs text-destructive">{generateError}</p>
+                )}
               </CardHeader>
               <CardContent className="space-y-3">
                 {Object.entries(stats).map(([stat, value]) => (
@@ -172,17 +256,20 @@ export function CharacterCreation() {
                     <div className="flex items-center gap-3">
                       <Input
                         type="number"
-                        value={value}
+                        value={statsGenerated ? value : ""}
                         onChange={(e) =>
-                          setStats({ ...stats, [stat]: parseInt(e.target.value) || 10 })
+                          setStats({ ...stats, [stat]: parseInt(e.target.value) || 0 })
                         }
                         className="w-16 h-8"
                         min="1"
                         max="20"
+                        disabled={!statsGenerated}
+                        placeholder={statsGenerated ? undefined : "—"}
                       />
                       <span className="text-sm font-medium text-blue-400 w-8 text-center">
-                        {Math.floor((value - 10) / 2) >= 0 ? "+" : ""}
-                        {Math.floor((value - 10) / 2)}
+                        {statsGenerated
+                          ? `${Math.floor((value - 10) / 2) >= 0 ? "+" : ""}${Math.floor((value - 10) / 2)}`
+                          : ""}
                       </span>
                     </div>
                   </div>
@@ -210,9 +297,17 @@ export function CharacterCreation() {
                     ? `${selectedRace} ${selectedClass}`
                     : "Select race and class"}
                 </p>
+                {age !== null && (
+                  <p className="text-sm text-muted-foreground">Age: {age}</p>
+                )}
                 {selectedBackground && (
                   <p className="text-sm text-muted-foreground">
                     Background: {selectedBackground}
+                  </p>
+                )}
+                {biography && (
+                  <p className="text-sm text-muted-foreground/80 max-w-lg mx-auto pt-2">
+                    {biography}
                   </p>
                 )}
               </div>
@@ -227,15 +322,25 @@ export function CharacterCreation() {
           transition={{ delay: 0.4 }}
           className="flex justify-end gap-4"
         >
+          {saveError && (
+            <p className="text-sm text-destructive mr-auto">{saveError}</p>
+          )}
           <Button variant="outline" onClick={() => navigate("/")}>
             Cancel
           </Button>
           <Button
             onClick={handleCreate}
-            disabled={!isValid}
+            disabled={!isValid || isSaving}
             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
           >
-            Start Campaign
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Saving...
+              </>
+            ) : (
+              "Create Character"
+            )}
           </Button>
         </motion.div>
       </div>

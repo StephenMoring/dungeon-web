@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useLocation } from "react-router";
+import { getCampaignCharacterId } from "../../api/campaigns";
 import { CharacterSheet, CharacterData } from "./character-sheet";
 import { ChatInterface } from "./chat-interface";
 import { NotesSection } from "./notes-section";
@@ -10,6 +11,16 @@ import { ArrowLeft, Menu } from "lucide-react";
 export function Campaign() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { state } = useLocation();
+  const locationState = state as { openingMessage?: string; characterId?: number } | null;
+  const openingMessage = locationState?.openingMessage ?? null;
+  const [characterId, setCharacterId] = useState<number | null>(locationState?.characterId ?? null);
+
+  useEffect(() => {
+    if (!characterId && id) {
+      getCampaignCharacterId(id).then(setCharacterId).catch(console.error);
+    }
+  }, [id, characterId]);
   
   const [character, setCharacter] = useState<CharacterData>({
     name: "Adventurer",
@@ -77,7 +88,7 @@ export function Campaign() {
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="col-span-3 h-full"
+            className="col-span-3 h-full min-h-0"
           >
             <CharacterSheet character={character} onUpdate={setCharacter} />
           </motion.div>
@@ -87,9 +98,9 @@ export function Campaign() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="col-span-6 h-full"
+            className="col-span-6 h-full min-h-0"
           >
-            <ChatInterface />
+            <ChatInterface openingMessage={openingMessage} characterId={characterId} />
           </motion.div>
 
           {/* Notes - Right Sidebar */}
@@ -97,7 +108,7 @@ export function Campaign() {
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="col-span-3 h-full"
+            className="col-span-3 h-full min-h-0"
           >
             <NotesSection notes={notes} onUpdate={setNotes} />
           </motion.div>

@@ -39,6 +39,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/characters/classes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Classes */
+        get: operations["get_classes_characters_classes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/characters/races": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Races */
+        get: operations["get_races_characters_races_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/characters/{id}": {
         parameters: {
             query?: never;
@@ -63,27 +97,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get Turns */
+        get: operations["get_turns_characters__id__turns_get"];
         put?: never;
         /** Play Turn */
         post: operations["play_turn_characters__id__turns_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/characters/classes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Classes */
-        get: operations["get_classes_characters_classes_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -168,8 +186,14 @@ export interface components {
             /** Code */
             code: string;
         };
-        /** CampaignDescriptionCreate */
-        CampaignDescriptionCreate: {
+        /** Campaign */
+        Campaign: {
+            /** Id */
+            id?: number | null;
+            /** Name */
+            name: string;
+            /** Theme */
+            theme: string;
             /** Description */
             description: string;
         };
@@ -217,13 +241,67 @@ export interface components {
             /** Race */
             race: string;
         };
+        /** CreateCampaignRequest */
+        CreateCampaignRequest: {
+            /** Character Id */
+            character_id: number;
+            /** Description */
+            description: string;
+        };
+        /** CreateCampaignResponse */
+        CreateCampaignResponse: {
+            campaign: components["schemas"]["Campaign"];
+            /** Opening Message */
+            opening_message: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HeroClass */
+        HeroClass: {
+            /** Id */
+            id?: number | null;
+            /** Class Name */
+            class_name: string;
+            /** Description */
+            description: string;
+        };
+        /** MessageHistory */
+        MessageHistory: {
+            /** Id */
+            id?: number | null;
+            /** Campaign Id */
+            campaign_id: number;
+            /** Character Id */
+            character_id: number;
+            /** Role */
+            role: string;
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+        };
+        /** Race */
+        Race: {
+            /** Id */
+            id?: number | null;
+            /** Race */
+            race: string;
+            /** Description */
+            description: string;
+        };
         /** TurnRequest */
         TurnRequest: {
+            /** Message */
+            message: string;
+        };
+        /** TurnResponse */
+        TurnResponse: {
             /** Message */
             message: string;
         };
@@ -331,6 +409,46 @@ export interface operations {
             };
         };
     };
+    get_classes_characters_classes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HeroClass"][];
+                };
+            };
+        };
+    };
+    get_races_characters_races_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Race"][];
+                };
+            };
+        };
+    };
     get_character_characters__id__get: {
         parameters: {
             query?: never;
@@ -349,6 +467,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_turns_characters__id__turns_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageHistory"][];
                 };
             };
             /** @description Validation Error */
@@ -383,7 +532,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["TurnResponse"];
                 };
             };
             /** @description Validation Error */
@@ -393,26 +542,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_classes_characters_classes_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
         };
@@ -446,7 +575,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CampaignDescriptionCreate"];
+                "application/json": components["schemas"]["CreateCampaignRequest"];
             };
         };
         responses: {
@@ -456,7 +585,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["CreateCampaignResponse"];
                 };
             };
             /** @description Validation Error */

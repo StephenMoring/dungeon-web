@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
-import { ScrollArea } from "../../components/ui/scroll-area";
 import { Send, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { DiceRoller } from "./dice-roller";
@@ -16,25 +15,41 @@ interface Message {
 }
 
 interface ChatInterfaceProps {
+  openingMessage?: string | null;
+  characterId?: number | null;
   onUserMessage?: (message: string) => void;
 }
 
-export function ChatInterface({ onUserMessage }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "dm",
-      content:
-        "Welcome, adventurer! You find yourself at the entrance of an ancient dungeon. The air is damp and cold, and you can hear the faint echo of water dripping in the distance. A worn stone archway stands before you, covered in mysterious runes. What do you do?",
-      timestamp: new Date(),
-    },
-  ]);
+export function ChatInterface({ openingMessage, characterId, onUserMessage }: ChatInterfaceProps) {
+  const [messages, setMessages] = useState<Message[]>(
+    openingMessage
+      ? [{ id: "1", role: "dm", content: openingMessage, timestamp: new Date() }]
+      : []
+  );
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(!!openingMessage);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Auto-scroll to bottom when new messages arrive
+    if (!characterId || historyLoaded) return;
+    fetch(`/api/characters/${characterId}/turns`, {
+      headers: { "Authorization": `Bearer ${localStorage.getItem("dungeon_jwt")}` },
+    })
+      .then((res) => res.json() as Promise<{ id: number; role: string; content: string; created_at: string }[]>)
+      .then((data) => {
+        setMessages(data.map((m) => ({
+          id: String(m.id),
+          role: m.role as "user" | "dm",
+          content: m.content,
+          timestamp: new Date(m.created_at),
+        })));
+        setHistoryLoaded(true);
+      })
+      .catch(console.error);
+  }, [characterId, historyLoaded]);
+
+  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
@@ -95,7 +110,7 @@ export function ChatInterface({ onUserMessage }: ChatInterfaceProps) {
   };
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !characterId) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -110,13 +125,14 @@ export function ChatInterface({ onUserMessage }: ChatInterfaceProps) {
     setIsTyping(true);
 
     try {
-      const response = await fetch("/api/characters/3/turns", {
+      const response = await fetch(`/api/characters/${characterId}/turns`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("dungeon_jwt")}` },
         body: JSON.stringify({ message: input }),
       });
 
-      const content = await response.text();
+      const data = await response.json() as { message: string };
+      const content = data.message;
 
       setMessages((prev) => [
         ...prev,
@@ -135,7 +151,7 @@ export function ChatInterface({ onUserMessage }: ChatInterfaceProps) {
   };
 
   return (
-    <Card className="h-full flex flex-col border-2 border-purple-500/20 bg-gradient-to-b from-card to-card/50">
+    <Card className="h-full grid grid-rows-[auto_1fr_auto] overflow-hidden border-2 border-purple-500/20 bg-gradient-to-b from-card to-card/50">
       <CardHeader className="border-b border-purple-500/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -147,8 +163,8 @@ export function ChatInterface({ onUserMessage }: ChatInterfaceProps) {
           <DiceRoller />
         </div>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col min-h-0 p-0">
-        <ScrollArea className="flex-1 px-6">
+      <CardContent className="min-h-0 p-0">
+        <div className="h-full overflow-y-auto px-6">
           <div className="space-y-4 py-4">
             <AnimatePresence initial={false}>
               {messages.map((message, index) => (
@@ -232,7 +248,7 @@ export function ChatInterface({ onUserMessage }: ChatInterfaceProps) {
             )}
             <div ref={scrollRef} />
           </div>
-        </ScrollArea>
+        </div>
         <div className="p-4 border-t border-purple-500/20 bg-gradient-to-t from-card/80 to-transparent">
           <div className="flex gap-2">
             <Input

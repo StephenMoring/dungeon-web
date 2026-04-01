@@ -1,28 +1,70 @@
+import type { components } from "@/types/api";
 import type { Campaign } from "./campaigns";
 
 const API_URL = "/api";
 
-export interface Character {
-  id: number | null;
-  campaign_id: number | null;
-  user_id: number;
-  name: string;
-  hero_class: string;
+export type Character = components["schemas"]["Character"];
+export type HeroClass = components["schemas"]["HeroClass"];
+export type Race = components["schemas"]["Race"];
+export type CharacterDescriptionCreate = components["schemas"]["CharacterDescriptionCreate"];
+
+export interface CharacterPreview {
   biography: string;
-  description: string;
   age: number;
-  strength: number | null;
-  perception: number | null;
-  endurance: number | null;
-  charisma: number | null;
-  intelligence: number | null;
-  agility: number | null;
-  luck: number | null;
+  strength: number;
+  perception: number;
+  endurance: number;
+  charisma: number;
+  intelligence: number;
+  agility: number;
+  luck: number;
 }
 
 export interface CharacterWithCampaign {
   character: Character;
   campaign: Campaign | null;
+}
+
+export async function createCharacter(data: Character): Promise<Character> {
+  const response = await fetch(`${API_URL}/characters/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem("dungeon_jwt")}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error(`Failed to create character: ${response.status}`);
+  return await response.json();
+}
+
+export async function createCharacterPreview(data: CharacterDescriptionCreate): Promise<CharacterPreview> {
+  const response = await fetch(`${API_URL}/characters/preview`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem("dungeon_jwt")}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error(`Failed to generate preview: ${response.status}`);
+  return await response.json();
+}
+
+export async function getClasses(): Promise<HeroClass[]> {
+  const response = await fetch(`${API_URL}/characters/classes`, {
+    headers: { "Authorization": `Bearer ${localStorage.getItem("dungeon_jwt")}` },
+  });
+  if (!response.ok) throw new Error(`Failed to fetch classes: ${response.status}`);
+  return await response.json();
+}
+
+export async function getRaces(): Promise<Race[]> {
+  const response = await fetch(`${API_URL}/characters/races`, {
+    headers: { "Authorization": `Bearer ${localStorage.getItem("dungeon_jwt")}` },
+  });
+  if (!response.ok) throw new Error(`Failed to fetch races: ${response.status}`);
+  return await response.json();
 }
 
 export async function getCharacters(): Promise<CharacterWithCampaign[]> {
