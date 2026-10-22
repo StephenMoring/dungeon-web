@@ -1,11 +1,23 @@
 import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Input } from "../../components/ui/input";
-import { Button } from "../../components/ui/button";
-import { Send, Sparkles } from "lucide-react";
+import { Input } from "@/app/components/ui/input";
 import { motion, AnimatePresence } from "motion/react";
+import ReactMarkdown, { type Components } from "react-markdown";
 import { DiceRoller } from "./dice-roller";
-import ReactMarkdown from "react-markdown";
+import { DIE_HREF, markDice } from "./mark-dice";
+
+const FOCUS = "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold focus-visible:ring-0";
+
+// Dice results marked by markDice render as an ember chip; other links stay plain links.
+const MARKDOWN: Components = {
+  a: ({ href, children }) =>
+    href === DIE_HREF ? (
+      <span className="inline-block rounded-[2px] bg-ember px-2 font-semibold tabular-nums text-[#1a0800]">{children}</span>
+    ) : (
+      <a href={href} className="text-foreground underline underline-offset-2">
+        {children}
+      </a>
+    ),
+};
 
 interface Message {
   id: string;
@@ -29,7 +41,7 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(!!openingMessage);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!characterId || historyLoaded) return;
@@ -50,10 +62,10 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
   }, [characterId, historyLoaded]);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
+    // Scroll the story pane itself, so the page around it never jumps.
+    const list = listRef.current;
+    if (list) list.scrollTop = list.scrollHeight;
+  }, [messages, isTyping]);
 
   const generateDMResponse = (userMessage: string): string => {
     // Mock AI responses based on keywords
@@ -151,123 +163,74 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
   };
 
   return (
-    <Card className="h-full grid grid-rows-[auto_1fr_auto] overflow-hidden border-2 border-purple-500/20 bg-gradient-to-b from-card to-card/50">
-      <CardHeader className="border-b border-purple-500/20">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-400" />
-            <CardTitle className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Dungeon Master
-            </CardTitle>
-          </div>
-          <DiceRoller />
-        </div>
-      </CardHeader>
-      <CardContent className="min-h-0 p-0">
-        <div className="h-full overflow-y-auto px-6">
-          <div className="space-y-4 py-4">
-            <AnimatePresence initial={false}>
-              {messages.map((message, index) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"
-                    }`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-lg p-4 shadow-lg transition-all hover:shadow-xl ${message.role === "user"
-                      ? "bg-gradient-to-br from-blue-600 to-purple-600 text-white border border-blue-400/20"
-                      : "bg-gradient-to-br from-muted to-muted/50 border border-purple-500/10"
-                      }`}
-                  >
-                    <div className="text-xs opacity-70 mb-1 flex items-center gap-1">
-                      {message.role === "dm" && (
-                        <Sparkles className="h-3 w-3" />
-                      )}
-                      {message.role === "dm" ? "Dungeon Master" : "You"}
-                    </div>
-                    <div className="text-sm leading-relaxed prose prose-invert prose-sm max-w-none">
-                      <ReactMarkdown>{message.content.replace(/\\n/g, "\n")}</ReactMarkdown>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-            {isTyping && (
+    <>
+      <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto p-5">
+        <div className="flex flex-col gap-4">
+          {messages.length === 0 && !isTyping && (
+            <p className="max-w-[62ch] text-base text-faint">The story begins with your first action.</p>
+          )}
+          <AnimatePresence initial={false}>
+            {messages.map((message) => (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                key={message.id}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex justify-start"
+                transition={{ duration: 0.2 }}
+                className={
+                  message.role === "user"
+                    ? "max-w-[68%] self-end break-words rounded-[4px] bg-raised px-3.5 py-2.5 text-[15px] leading-relaxed max-[759px]:max-w-[85%]"
+                    : "max-w-[62ch] break-words text-base leading-relaxed"
+                }
               >
-                <div className="max-w-[80%] rounded-lg p-4 bg-gradient-to-br from-muted to-muted/50 border border-purple-500/10 shadow-lg">
-                  <div className="text-xs opacity-70 mb-1 flex items-center gap-1">
-                    <Sparkles className="h-3 w-3" />
-                    Dungeon Master
-                  </div>
-                  <div className="text-sm">
-                    <span className="inline-flex gap-1">
-                      <motion.span
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{
-                          duration: 0.6,
-                          repeat: Infinity,
-                          repeatType: "loop",
-                        }}
-                      >
-                        ●
-                      </motion.span>
-                      <motion.span
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{
-                          duration: 0.6,
-                          repeat: Infinity,
-                          repeatType: "loop",
-                          delay: 0.2,
-                        }}
-                      >
-                        ●
-                      </motion.span>
-                      <motion.span
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{
-                          duration: 0.6,
-                          repeat: Infinity,
-                          repeatType: "loop",
-                          delay: 0.4,
-                        }}
-                      >
-                        ●
-                      </motion.span>
-                    </span>
-                  </div>
+                <span className="sr-only">{message.role === "dm" ? "Dungeon Master: " : "You: "}</span>
+                <div className="[&_p]:m-0 [&_p+p]:mt-3 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold">
+                  <ReactMarkdown components={MARKDOWN}>{markDice(message.content.replace(/\\n/g, "\n"))}</ReactMarkdown>
                 </div>
               </motion.div>
-            )}
-            <div ref={scrollRef} />
-          </div>
-        </div>
-        <div className="p-4 border-t border-purple-500/20 bg-gradient-to-t from-card/80 to-transparent">
-          <div className="flex gap-2">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Describe your action..."
-              className="flex-1 border-purple-500/20 focus:border-purple-500/50 transition-colors"
-            />
-            <Button
-              onClick={handleSend}
-              size="icon"
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all"
+            ))}
+          </AnimatePresence>
+          {isTyping && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              role="status"
+              className="inline-flex items-center gap-1.5 text-muted-foreground"
             >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
+              <span className="sr-only">The Dungeon Master is writing</span>
+              {[0, 0.2, 0.4].map((delay) => (
+                <motion.span
+                  key={delay}
+                  aria-hidden="true"
+                  className="size-1.5 rounded-full bg-muted-foreground"
+                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  transition={{ duration: 1, repeat: Infinity, delay }}
+                />
+              ))}
+            </motion.div>
+          )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div className="shrink-0 space-y-3 border-t border-border p-5 max-[759px]:p-4">
+        <DiceRoller />
+        <div className="flex gap-2.5">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            aria-label="Your action"
+            placeholder="What do you do?"
+            className={`h-11 flex-1 rounded-[4px] border-input bg-raised px-3.5 text-[15px] placeholder:text-faint dark:bg-raised md:text-[15px] ${FOCUS}`}
+          />
+          <motion.button
+            type="button"
+            onClick={handleSend}
+            whileTap={{ y: 1 }}
+            className={`h-11 shrink-0 rounded-[4px] bg-gold px-[22px] text-base font-semibold text-primary-foreground transition-[filter] hover:brightness-110 ${FOCUS}`}
+          >
+            Act
+          </motion.button>
+        </div>
+      </div>
+    </>
   );
 }

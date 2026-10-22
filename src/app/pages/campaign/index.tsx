@@ -1,27 +1,34 @@
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
-import { useNavigate, useParams, useLocation } from "react-router";
-import { getCampaignCharacterId } from "../../api/campaigns";
-import { CharacterSheet, CharacterData } from "./character-sheet";
+import { MotionConfig } from "motion/react";
+import { useParams, useLocation } from "react-router";
+import { getCampaignCharacterId, getCampaigns, type Campaign as CampaignRecord } from "@/app/api/campaigns";
+import { CharacterSheet, type CharacterData } from "./character-sheet";
 import { ChatInterface } from "./chat-interface";
 import { NotesSection } from "./notes-section";
-import { Button } from "../../components/ui/button";
-import { ArrowLeft, Menu } from "lucide-react";
+import { ArtBand } from "./art-band";
+import { PlayHeader } from "./play-header";
+import { campaignName } from "./campaign-name";
+
+const PANE = "min-h-0 rounded-[4px] border border-border bg-card";
 
 export function Campaign() {
-  const navigate = useNavigate();
-  const { id } = useParams();
+  const { id = "" } = useParams();
   const { state } = useLocation();
   const locationState = state as { openingMessage?: string; characterId?: number } | null;
   const openingMessage = locationState?.openingMessage ?? null;
   const [characterId, setCharacterId] = useState<number | null>(locationState?.characterId ?? null);
+  const [campaigns, setCampaigns] = useState<CampaignRecord[] | null>(null);
 
   useEffect(() => {
     if (!characterId && id) {
       getCampaignCharacterId(id).then(setCharacterId).catch(console.error);
     }
   }, [id, characterId]);
-  
+
+  useEffect(() => {
+    getCampaigns().then(setCampaigns).catch(console.error);
+  }, []);
+
   const [character, setCharacter] = useState<CharacterData>({
     name: "Adventurer",
     class: "Wizard",
@@ -51,69 +58,36 @@ export function Campaign() {
     "- Entered ancient dungeon\n- Two paths: north (water sounds) and east (red glow)\n"
   );
 
-  const [showMenu, setShowMenu] = useState(false);
-
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="flex items-center justify-between px-6 py-3 border-b border-purple-500/20 bg-card/50 backdrop-blur-sm"
-      >
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="font-semibold text-lg">Campaign #{id}</h1>
-            <p className="text-sm text-muted-foreground">{character.name} - Level {character.level}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            Save Progress
-          </Button>
-          <Button variant="ghost" size="icon">
-            <Menu className="h-5 w-5" />
-          </Button>
-        </div>
-      </motion.div>
+    <MotionConfig reducedMotion="user">
+      {/* Desktop and tablet fit the height under the navbar; phones scroll as one column. */}
+      <div className="flex h-full flex-col overflow-hidden bg-background max-[759px]:overflow-y-auto">
+        <ArtBand />
+        <PlayHeader title={campaignName(campaigns, id)} meta={`${character.name} · ${character.class}`} />
 
-      {/* Main Content */}
-      <div className="flex-1 p-4 overflow-hidden">
-        <div className="h-full grid grid-cols-12 gap-4">
-          {/* Character Sheet - Left Sidebar */}
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            className="col-span-3 h-full min-h-0"
+        <div className="grid min-h-0 flex-1 grid-cols-[260px_minmax(0,1fr)_240px] grid-rows-[minmax(0,1fr)] gap-4 px-6 pb-6 min-[760px]:max-[1099px]:grid-cols-[240px_minmax(0,1fr)] min-[760px]:max-[1099px]:grid-rows-[minmax(0,1fr)_minmax(0,1fr)] max-[759px]:flex-none max-[759px]:grid-cols-1 max-[759px]:grid-rows-none max-[759px]:px-4 max-[759px]:pb-4">
+          <aside
+            aria-label="Character"
+            className={`${PANE} overflow-y-auto min-[760px]:max-[1099px]:col-start-1 min-[760px]:max-[1099px]:row-start-1 max-[759px]:overflow-visible`}
           >
             <CharacterSheet character={character} onUpdate={setCharacter} />
-          </motion.div>
+          </aside>
 
-          {/* Chat Interface - Center */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="col-span-6 h-full min-h-0"
+          <section
+            aria-label="Story"
+            className={`${PANE} flex flex-col overflow-hidden min-[760px]:max-[1099px]:col-start-2 min-[760px]:max-[1099px]:row-span-2 min-[760px]:max-[1099px]:row-start-1 max-[759px]:order-first max-[759px]:max-h-[max(440px,80svh)] max-[759px]:min-h-[420px]`}
           >
             <ChatInterface openingMessage={openingMessage} characterId={characterId} />
-          </motion.div>
+          </section>
 
-          {/* Notes - Right Sidebar */}
-          <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="col-span-3 h-full min-h-0"
+          <aside
+            aria-label="Notes"
+            className={`${PANE} flex flex-col min-[760px]:max-[1099px]:col-start-1 min-[760px]:max-[1099px]:row-start-2`}
           >
             <NotesSection notes={notes} onUpdate={setNotes} />
-          </motion.div>
+          </aside>
         </div>
       </div>
-    </div>
+    </MotionConfig>
   );
 }
