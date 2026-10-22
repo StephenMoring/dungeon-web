@@ -1,23 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/app/components/ui/input";
 import { motion, AnimatePresence } from "motion/react";
-import ReactMarkdown, { type Components } from "react-markdown";
+import ReactMarkdown from "react-markdown";
 import { DiceRoller } from "./dice-roller";
-import { DIE_HREF, markDice } from "./mark-dice";
 
 const FOCUS = "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold focus-visible:ring-0";
 
-// Dice results marked by markDice render as an ember chip; other links stay plain links.
-const MARKDOWN: Components = {
-  a: ({ href, children }) =>
-    href === DIE_HREF ? (
-      <span className="inline-block rounded-[2px] bg-ember px-2 font-semibold tabular-nums text-[#1a0800]">{children}</span>
-    ) : (
-      <a href={href} className="text-foreground underline underline-offset-2">
-        {children}
-      </a>
-    ),
-};
 
 interface Message {
   id: string;
@@ -184,7 +172,7 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
               >
                 <span className="sr-only">{message.role === "dm" ? "Dungeon Master: " : "You: "}</span>
                 <div className="[&_p]:m-0 [&_p+p]:mt-3 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold">
-                  <ReactMarkdown components={MARKDOWN}>{markDice(message.content.replace(/\\n/g, "\n"))}</ReactMarkdown>
+                  <ReactMarkdown>{message.content.replace(/\\n/g, "\n")}</ReactMarkdown>
                 </div>
               </motion.div>
             ))}
