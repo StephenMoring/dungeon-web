@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/app/context/auth-context";
 import type { User } from "@/app/context/auth-context";
-import { Loader2 } from "lucide-react";
-import { Button } from "@/app/components/ui/button";
+import { AlertCircle } from "lucide-react";
+import { Wordmark } from "@/app/components/shared/wordmark";
 
 interface BackendUser {
   id: number;
@@ -63,23 +63,26 @@ export function AuthCallback() {
 
   if (error) {
     return (
-      <div className="h-screen w-screen bg-background dark flex items-center justify-center">
-        <div className="text-center space-y-4 max-w-sm px-6">
-          <p className="text-destructive font-medium">{error}</p>
-          <Button variant="outline" asChild>
-            <a href="/">Try again</a>
-          </Button>
+      <div className="flex h-screen w-screen flex-col items-center justify-center gap-6 bg-background px-6">
+        <Wordmark />
+        <div className="flex max-w-sm items-start gap-2 text-muted-foreground">
+          <AlertCircle className="mt-0.5 size-4 shrink-0 text-ember" aria-hidden="true" />
+          <p role="alert" className="m-0 text-base">{error}</p>
         </div>
+        <a
+          href="/"
+          className="inline-flex h-11 items-center rounded-[4px] border border-input px-[22px] text-base font-medium text-foreground transition-colors hover:bg-raised focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold"
+        >
+          Try again
+        </a>
       </div>
     );
   }
 
   return (
-    <div className="h-screen w-screen bg-background dark flex items-center justify-center">
-      <div className="flex items-center gap-3 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        <span>Signing you in...</span>
-      </div>
+    <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-background px-6">
+      <Wordmark />
+      <p className="m-0 text-base text-muted-foreground" role="status">Opening the gate…</p>
     </div>
   );
 }
