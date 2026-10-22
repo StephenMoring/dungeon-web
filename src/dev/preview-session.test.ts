@@ -1,6 +1,12 @@
-import { describe, expect, it } from "vitest";
-import { PREVIEW_CAMPAIGNS } from "./fixtures";
+import { afterEach, describe, expect, it } from "vitest";
+import { LONG_CAMPAIGN_NAME, PREVIEW_CAMPAIGNS } from "./fixtures";
 import { isPreviewRequested, startPreviewSession } from "./preview-session";
+
+const originalFetch = window.fetch;
+
+afterEach(() => {
+  window.fetch = originalFetch;
+});
 
 describe("preview session", () => {
   it("detects the preview flag in the query string", () => {
@@ -13,5 +19,10 @@ describe("preview session", () => {
     expect(localStorage.getItem("dungeon_jwt")).toBe("preview");
     const res = await fetch("/api/campaigns/");
     expect(await res.json()).toEqual(PREVIEW_CAMPAIGNS);
+  });
+
+  it("carries a 60-character campaign name for long-name layout checks", () => {
+    expect(LONG_CAMPAIGN_NAME.length).toBe(60);
+    expect(PREVIEW_CAMPAIGNS.some((c) => c.name === LONG_CAMPAIGN_NAME)).toBe(true);
   });
 });

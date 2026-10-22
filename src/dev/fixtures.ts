@@ -4,7 +4,7 @@ import type { components } from "@/types/api";
 
 type MessageHistory = components["schemas"]["MessageHistory"];
 
-export const LONG_CAMPAIGN_NAME = "The Hollow Crown of the Seven Drowned Bell-Ringers of Orrin";
+export const LONG_CAMPAIGN_NAME = "The Hollow Crown of the Seven Drowned Bell-Ringers of Orrins";
 
 export const PREVIEW_CAMPAIGNS: Campaign[] = [
   {
