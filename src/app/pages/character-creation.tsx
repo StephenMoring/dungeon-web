@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
@@ -12,6 +11,45 @@ import type { HeroClass, Race, CharacterPreview } from "../api/characters";
 import { useAuth } from "../context/auth-context";
 
 const BACKGROUNDS = ["Acolyte", "Criminal", "Folk Hero", "Noble", "Sage", "Soldier", "Outlander", "Entertainer"];
+
+const FOCUS = "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold focus-visible:ring-0";
+const FIELD = `rounded-[4px] border-input bg-raised text-[15px] placeholder:text-faint dark:bg-raised md:text-[15px] ${FOCUS}`;
+const PANEL = "rounded-[4px] border border-border bg-card p-5 max-[759px]:p-4";
+const HEADING = "m-0 text-lg font-semibold text-foreground";
+const LABEL = "text-sm font-medium text-muted-foreground";
+
+interface ChipGroupProps {
+  label: string;
+  options: string[];
+  value: string;
+  onSelect: (option: string) => void;
+  columns: string;
+}
+
+function ChipGroup({ label, options, value, onSelect, columns }: ChipGroupProps) {
+  return (
+    <div role="group" aria-label={label}>
+      <Label className={LABEL}>{label}</Label>
+      <div className={`mt-2 grid gap-2 ${columns}`}>
+        {options.map((option) => (
+          <button
+            key={option}
+            type="button"
+            aria-pressed={value === option}
+            onClick={() => onSelect(option)}
+            className={`min-h-11 rounded-[4px] border px-3 py-2 text-sm font-medium transition-colors ${
+              value === option
+                ? "border-foreground bg-raised text-foreground"
+                : "border-border bg-card text-muted-foreground hover:border-input hover:text-foreground"
+            } ${FOCUS}`}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const EMPTY_STATS = {
   strength: 0,
@@ -105,244 +143,179 @@ export function CharacterCreation() {
   }
 
   return (
-    <div className="h-full p-8 overflow-auto">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-4"
-        >
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Create Your Character
+    <div className="h-full overflow-y-auto">
+      <div className="mx-auto max-w-[960px] space-y-6 px-6 py-6 max-[759px]:px-4">
+        <header className="flex items-start gap-x-4">
+          <Link
+            to="/dashboard"
+            aria-label="Back to the dashboard"
+            className={`-ml-2 inline-flex size-11 shrink-0 items-center justify-center rounded-[4px] text-muted-foreground transition-colors hover:text-foreground ${FOCUS}`}
+          >
+            <ArrowLeft className="size-5" aria-hidden="true" />
+          </Link>
+          <h1 className="m-0 min-w-0 break-words pt-[3px] font-display text-[28px] font-normal leading-tight text-foreground max-[759px]:text-[24px]">
+            Forge a hero
           </h1>
-        </motion.div>
+        </header>
 
-        <div className="grid grid-cols-2 gap-6">
-          {/* Basic Info */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Card className="border-2 border-purple-500/20">
-              <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="char-name">Character Name</Label>
-                  <Input
-                    id="char-name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your character's name"
-                  />
-                </div>
+        <div className="grid grid-cols-2 items-start gap-6 max-[759px]:grid-cols-1">
+          <section className={`${PANEL} flex flex-col gap-4`} aria-labelledby="basic-heading">
+            <h2 id="basic-heading" className={HEADING}>Basic information</h2>
+            <div className="space-y-2">
+              <Label htmlFor="char-name" className={LABEL}>Character name</Label>
+              <Input
+                id="char-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your character's name"
+                className={`h-10 ${FIELD}`}
+              />
+            </div>
 
-                <div>
-                  <Label htmlFor="char-description">Description</Label>
-                  <Textarea
-                    id="char-description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe your character — background, personality, appearance..."
-                    className="resize-none"
-                    rows={3}
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="char-description" className={LABEL}>Description</Label>
+              <Textarea
+                id="char-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe your character — background, personality, appearance..."
+                className={`resize-none ${FIELD}`}
+                rows={3}
+              />
+            </div>
 
-                <div>
-                  <Label>Class</Label>
-                  <div className="grid grid-cols-3 gap-2 mt-2">
-                    {classes.map((cls) => (
-                      <button
-                        key={cls.class_name}
-                        onClick={() => setSelectedClass(cls.class_name)}
-                        className={`px-3 py-2 text-sm rounded border transition-all ${selectedClass === cls.class_name
-                            ? "bg-purple-600 border-purple-400 text-white"
-                            : "bg-muted border-border hover:border-purple-500/50"
-                          }`}
-                      >
-                        {cls.class_name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+            <ChipGroup
+              label="Class"
+              options={classes.map((c) => c.class_name)}
+              value={selectedClass}
+              onSelect={setSelectedClass}
+              columns="grid-cols-3"
+            />
+            <ChipGroup
+              label="Race"
+              options={races.map((r) => r.race)}
+              value={selectedRace}
+              onSelect={setSelectedRace}
+              columns="grid-cols-3"
+            />
+            <ChipGroup
+              label="Background"
+              options={BACKGROUNDS}
+              value={selectedBackground}
+              onSelect={setSelectedBackground}
+              columns="grid-cols-2"
+            />
+          </section>
 
-                <div>
-                  <Label>Race</Label>
-                  <div className="grid grid-cols-3 gap-2 mt-2">
-                    {races.map((r) => (
-                      <button
-                        key={r.race}
-                        onClick={() => setSelectedRace(r.race)}
-                        className={`px-3 py-2 text-sm rounded border transition-all ${selectedRace === r.race
-                            ? "bg-emerald-600 border-emerald-400 text-white"
-                            : "bg-muted border-border hover:border-emerald-500/50"
-                          }`}
-                      >
-                        {r.race}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Background</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {BACKGROUNDS.map((bg) => (
-                      <button
-                        key={bg}
-                        onClick={() => setSelectedBackground(bg)}
-                        className={`px-3 py-2 text-sm rounded border transition-all ${selectedBackground === bg
-                            ? "bg-amber-600 border-amber-400 text-white"
-                            : "bg-muted border-border hover:border-amber-500/50"
-                          }`}
-                      >
-                        {bg}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Ability Scores */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card className="border-2 border-blue-500/20">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Ability Scores</CardTitle>
-                  <Button
-                    onClick={handleGenerate}
-                    size="sm"
-                    className="gap-2"
-                    disabled={!canGenerate || isGenerating}
-                  >
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4" />
-                        Generate
-                      </>
-                    )}
-                  </Button>
-                </div>
-                {!statsGenerated && !isGenerating && (
-                  <p className="text-xs text-muted-foreground">
-                    Fill in your name, description, class, and race to generate stats
-                  </p>
+          <div className="flex flex-col gap-6">
+          <section className={`${PANEL} flex flex-col gap-4`} aria-labelledby="scores-heading">
+            <div className="flex items-center justify-between gap-3">
+              <h2 id="scores-heading" className={HEADING}>Ability scores</h2>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleGenerate}
+                className={`h-11 gap-2 rounded-[4px] border-input bg-transparent px-4 text-base font-semibold text-foreground hover:bg-raised hover:text-foreground ${FOCUS}`}
+                disabled={!canGenerate || isGenerating}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="size-4" aria-hidden="true" />
+                    Generate
+                  </>
                 )}
-                {generateError && (
-                  <p className="text-xs text-destructive">{generateError}</p>
-                )}
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {Object.entries(stats).map(([stat, value]) => (
-                  <div key={stat} className="flex items-center justify-between">
-                    <Label className="capitalize">{stat}</Label>
-                    <div className="flex items-center gap-3">
-                      <Input
-                        type="number"
-                        value={statsGenerated ? value : ""}
-                        onChange={(e) =>
-                          setStats({ ...stats, [stat]: parseInt(e.target.value) || 0 })
-                        }
-                        className="w-16 h-8"
-                        min="1"
-                        max="20"
-                        disabled={!statsGenerated}
-                        placeholder={statsGenerated ? undefined : "—"}
-                      />
-                      <span className="text-sm font-medium text-blue-400 w-8 text-center">
-                        {statsGenerated
-                          ? `${Math.floor((value - 10) / 2) >= 0 ? "+" : ""}${Math.floor((value - 10) / 2)}`
-                          : ""}
-                      </span>
-                    </div>
+              </Button>
+            </div>
+            {!statsGenerated && !isGenerating && (
+              <p className="m-0 text-sm text-muted-foreground">
+                Fill in your name, description, class, and race to generate stats
+              </p>
+            )}
+            {generateError && (
+              <p role="alert" className="m-0 text-sm text-ember">{generateError}</p>
+            )}
+            <ul className="m-0 flex list-none flex-col divide-y divide-border p-0">
+              {Object.entries(stats).map(([stat, value]) => (
+                <li key={stat} className="flex items-center justify-between py-2 first:pt-0 last:pb-0">
+                  <Label htmlFor={`stat-${stat}`} className="text-base capitalize text-foreground">{stat}</Label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      id={`stat-${stat}`}
+                      type="number"
+                      value={statsGenerated ? value : ""}
+                      onChange={(e) =>
+                        setStats({ ...stats, [stat]: parseInt(e.target.value) || 0 })
+                      }
+                      className={`h-10 w-[72px] tabular-nums ${FIELD}`}
+                      min="1"
+                      max="20"
+                      disabled={!statsGenerated}
+                      placeholder={statsGenerated ? undefined : "—"}
+                    />
+                    <span className="w-8 text-center text-sm font-medium tabular-nums text-muted-foreground">
+                      {statsGenerated
+                        ? `${Math.floor((value - 10) / 2) >= 0 ? "+" : ""}${Math.floor((value - 10) / 2)}`
+                        : ""}
+                    </span>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          </motion.div>
+                </li>
+              ))}
+            </ul>
+          </section>
+          <section className={PANEL} aria-labelledby="preview-heading">
+            <h2 id="preview-heading" className={HEADING}>Character preview</h2>
+            <div className="space-y-2 px-2 py-6 text-center">
+              <p className="m-0 break-words font-display text-[28px] leading-tight text-foreground">
+                {name || "Unnamed Character"}
+              </p>
+              <p className="m-0 text-lg text-muted-foreground">
+                {selectedRace && selectedClass ? `${selectedRace} ${selectedClass}` : "Select race and class"}
+              </p>
+              {age !== null && <p className="m-0 text-sm text-muted-foreground tabular-nums">Age: {age}</p>}
+              {selectedBackground && (
+                <p className="m-0 text-sm text-muted-foreground">Background: {selectedBackground}</p>
+              )}
+              {biography && (
+                <p className="mx-auto m-0 max-w-lg break-words pt-2 text-base text-muted-foreground">{biography}</p>
+              )}
+            </div>
+          </section>
+          </div>
         </div>
 
-        {/* Character Preview */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card className="border-2 border-emerald-500/20">
-            <CardHeader>
-              <CardTitle>Character Preview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center p-8 space-y-2">
-                <h2 className="text-3xl font-bold">{name || "Unnamed Character"}</h2>
-                <p className="text-xl text-muted-foreground">
-                  {selectedRace && selectedClass
-                    ? `${selectedRace} ${selectedClass}`
-                    : "Select race and class"}
-                </p>
-                {age !== null && (
-                  <p className="text-sm text-muted-foreground">Age: {age}</p>
-                )}
-                {selectedBackground && (
-                  <p className="text-sm text-muted-foreground">
-                    Background: {selectedBackground}
-                  </p>
-                )}
-                {biography && (
-                  <p className="text-sm text-muted-foreground/80 max-w-lg mx-auto pt-2">
-                    {biography}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="flex justify-end gap-4"
-        >
+        <div className="flex flex-wrap items-center justify-end gap-4">
           {saveError && (
-            <p className="text-sm text-destructive mr-auto">{saveError}</p>
+            <p role="alert" className="m-0 mr-auto text-sm text-ember">{saveError}</p>
           )}
-          <Button variant="outline" onClick={() => navigate("/")}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleCreate}
-            disabled={!isValid || isSaving}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+          <Link
+            to="/dashboard"
+            className={`inline-flex h-11 items-center rounded-[4px] px-3 text-base font-medium text-muted-foreground transition-colors hover:text-foreground ${FOCUS}`}
           >
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Saving...
-              </>
-            ) : (
-              "Create Character"
-            )}
-          </Button>
-        </motion.div>
+            Cancel
+          </Link>
+          <motion.div whileTap={{ y: 1 }}>
+            <Button
+              type="button"
+              onClick={handleCreate}
+              disabled={!isValid || isSaving}
+              className={`h-11 rounded-[4px] bg-gold px-[22px] text-base font-semibold text-primary-foreground hover:bg-gold hover:brightness-110 ${FOCUS}`}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  Saving...
+                </>
+              ) : (
+                "Create Character"
+              )}
+            </Button>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
