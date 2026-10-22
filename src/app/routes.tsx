@@ -1,5 +1,5 @@
 import { createBrowserRouter } from "react-router";
-import { Home } from "./pages/home";
+import { Home } from "./pages/home/index";
 import { CharacterCreation } from "./pages/character-creation";
 import { Campaign } from "./pages/campaign";
 import { CampaignList } from "./pages/campaign-list";
