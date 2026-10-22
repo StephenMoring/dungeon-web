@@ -43,7 +43,7 @@ describe("UserMenu", () => {
   });
 
   it("renders an img when avatar is non-null", () => {
-    const { auth } = makeAuth({ avatar: "abc123" });
+    const { auth } = makeAuth({ avatar: "https://cdn.discordapp.com/avatars/42/abc123.png" });
     renderMenu(auth);
     const img = screen.getByRole("img");
     expect(img).toHaveAttribute("src", "https://cdn.discordapp.com/avatars/42/abc123.png");

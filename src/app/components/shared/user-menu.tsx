@@ -30,7 +30,7 @@ export function UserMenu() {
       onError={() => setAvatarError(true)}
     />
   ) : (
-    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-semibold select-none">
+    <div className="w-8 h-8 rounded-full bg-raised text-foreground flex items-center justify-center text-sm font-semibold select-none">
       {(user.username[0] ?? "?").toUpperCase()}
     </div>
   );
@@ -40,7 +40,7 @@ export function UserMenu() {
       <DropdownMenuTrigger asChild>
         <button
           aria-label="Open user menu"
-          className="rounded-full focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-background"
+          className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold"
         >
           {avatarElement}
         </button>
