@@ -45,8 +45,8 @@
   --faint: #ab9a84;
   --ember: #ff5a1f;
   --gold: #f2b544;
-  --font-display: "Metal Mania", serif;
-  --font-body: "Barlow", system-ui, sans-serif;
+  --face-display: "Metal Mania", serif;
+  --face-body: "Barlow", system-ui, sans-serif;
 }
 
 @theme inline {
@@ -75,8 +75,8 @@
   --color-faint: var(--faint);
   --color-ember: var(--ember);
   --color-gold: var(--gold);
-  --font-display: var(--font-display);
-  --font-sans: var(--font-body);
+  --font-display: var(--face-display);
+  --font-sans: var(--face-body);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -103,7 +103,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-body);
+    font-family: var(--face-body);
   }
 
   /**
