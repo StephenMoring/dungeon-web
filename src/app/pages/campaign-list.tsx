@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Link, useNavigate } from "react-router";
-import { Button } from "../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { ArrowLeft, Plus, Trash2, Calendar, Sword } from "lucide-react";
+import { Link } from "react-router";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { getCampaigns, type Campaign } from "../api/campaigns";
 
+const FOCUS = "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold";
+const MotionLink = motion.create(Link);
+
+function plural(count: number, noun: string): string {
+  return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
+
 export function CampaignList() {
-  const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
 
   useEffect(() => {
@@ -15,92 +19,74 @@ export function CampaignList() {
   }, []);
 
   return (
-    <div className="h-full p-8 overflow-auto">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
-        >
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-                Your Campaigns
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                {campaigns.length} active campaigns
-              </p>
-            </div>
-          </div>
-          <Link to="/character/new">
-            <Button className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
-              <Plus className="h-4 w-4" />
-              New Campaign
-            </Button>
+    <div className="h-full overflow-y-auto">
+      <div className="mx-auto max-w-[960px] px-6 py-6 max-[759px]:px-4">
+        <header className="mb-6 flex items-start gap-x-4">
+          <Link
+            to="/dashboard"
+            aria-label="Back to the dashboard"
+            className={`-ml-2 inline-flex size-11 shrink-0 items-center justify-center rounded-[4px] text-muted-foreground transition-colors hover:text-foreground ${FOCUS}`}
+          >
+            <ArrowLeft className="size-5" aria-hidden="true" />
           </Link>
-        </motion.div>
+          <div className="min-w-0 flex-1 pt-[3px]">
+            <h1 className="m-0 break-words font-display text-[28px] font-normal leading-tight text-foreground max-[759px]:text-[24px]">
+              Campaigns
+            </h1>
+            <p className="m-0 mt-1 text-base text-muted-foreground tabular-nums">
+              {plural(campaigns.length, "campaign")}
+            </p>
+          </div>
+          <MotionLink
+            to="/character/new"
+            whileTap={{ y: 1 }}
+            className={`inline-flex h-11 shrink-0 items-center rounded-[4px] bg-gold px-[22px] text-base font-semibold text-primary-foreground transition-[filter] hover:brightness-110 ${FOCUS}`}
+          >
+            New campaign
+          </MotionLink>
+        </header>
 
-        {/* Campaigns Grid */}
-        <div className="grid grid-cols-2 gap-6">
-          {campaigns.map((campaign, idx) => (
-            <motion.div
-              key={campaign.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-            >
-              <Card className="border-2 border-border/50 hover:border-purple-500/50 transition-all group h-full">
-                <CardHeader className="border-b border-border/50">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-2xl mb-2 group-hover:text-purple-400 transition-colors">
-                        {campaign.name}
-                      </CardTitle>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Sword className="h-4 w-4 text-emerald-400" />
-                        <span>{campaign.theme}</span>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-blue-400" />
-                      <span className="text-muted-foreground">
-                        Checkpoints: {campaign.campaign_checkpoints.length}
-                      </span>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Characters: </span>
-                      <span className="font-medium">{campaign.characters.length}</span>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Description: </span>
-                      <span className="font-medium text-amber-400">{campaign.description}</span>
-                    </div>
-                  </div>
-                  <Link to={`/adventure/${campaign.id}`}>
-                    <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
-                      Continue Adventure
-                    </Button>
+        {campaigns.length === 0 ? (
+          <p className="m-0 rounded-[4px] border border-dashed border-border px-[18px] py-6 text-base text-muted-foreground">
+            No campaigns yet. Forge a hero to begin one.
+          </p>
+        ) : (
+          <ul className="m-0 flex list-none flex-col gap-3 p-0">
+            {campaigns.map((campaign) => (
+              <li
+                key={campaign.id}
+                className="flex items-start gap-3 rounded-[4px] border border-border bg-card px-[18px] py-4 max-[759px]:flex-col max-[759px]:gap-1"
+              >
+                <div className="min-w-0 flex-1">
+                  <h2 className="m-0 break-words font-display text-[22px] font-normal leading-tight text-foreground">
+                    {campaign.name}
+                  </h2>
+                  <p className="m-0 mt-1 text-sm text-muted-foreground tabular-nums">
+                    {campaign.theme} · {plural(campaign.characters.length, "character")} ·{" "}
+                    {plural(campaign.campaign_checkpoints.length, "checkpoint")}
+                  </p>
+                  <p className="m-0 mt-2 break-words text-base text-muted-foreground">{campaign.description}</p>
+                </div>
+                <div className="-mr-3 flex shrink-0 items-center gap-1 max-[759px]:-ml-3 max-[759px]:w-full max-[759px]:justify-between">
+                  <Link
+                    to={`/adventure/${campaign.id}`}
+                    className={`inline-flex min-h-11 items-center whitespace-nowrap rounded-[4px] px-3 text-sm font-semibold text-gold hover:brightness-110 ${FOCUS}`}
+                  >
+                    Continue
+                    <span className="sr-only">: {campaign.name}</span>
                   </Link>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+                  <button
+                    type="button"
+                    aria-label={`Delete ${campaign.name}`}
+                    className={`inline-flex size-11 items-center justify-center rounded-[4px] text-faint transition-colors hover:text-ember ${FOCUS}`}
+                  >
+                    <Trash2 className="size-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
