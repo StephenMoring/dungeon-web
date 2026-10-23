@@ -17,8 +17,7 @@ export function MarginNote({ note, active, onShow, className = "" }: MarginNoteP
       onMouseLeave={() => onShow(null)}
       onFocus={() => onShow(note.part)}
       onBlur={() => onShow(null)}
-      onClick={() => onShow(active ? null : note.part)}
-      aria-pressed={active}
+      onClick={() => onShow(note.part)}
       className={`block w-full max-w-[26ch] rounded-[4px] bg-transparent p-0 ${FOCUS} ${className}`}
     >
       <span className={`block text-lg font-medium text-foreground underline underline-offset-4 transition-[text-decoration-color] duration-200 ${active ? "decoration-current" : "decoration-transparent"}`}>

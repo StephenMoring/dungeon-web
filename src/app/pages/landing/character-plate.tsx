@@ -20,14 +20,14 @@ export function CharacterPlate({ active, parts = ALL }: CharacterPlateProps) {
   return (
     <div data-ui className="flex w-full max-w-[380px] flex-col gap-2 rounded-[4px] border border-border bg-card p-3">
       {parts.includes("name") && (
-        <div className={partClass("name", active)}>
+        <div data-part="name" data-active={active === "name"} className={partClass("name", active)}>
           <p className="m-0 font-display text-[28px] leading-tight text-foreground">{hero.name}</p>
           <p className="m-0 mt-1 text-[15px] text-muted-foreground">{hero.kind}</p>
           <p className="m-0 text-[15px] text-muted-foreground">{hero.campaign}</p>
         </div>
       )}
       {parts.includes("wounds") && (
-        <div className={partClass("wounds", active)}>
+        <div data-part="wounds" data-active={active === "wounds"} className={partClass("wounds", active)}>
           <div className="flex items-baseline justify-between">
             <span className="text-[15px] text-foreground">Wounds</span>
             <span className="tabular-nums text-foreground">
@@ -41,7 +41,7 @@ export function CharacterPlate({ active, parts = ALL }: CharacterPlateProps) {
         </div>
       )}
       {parts.includes("stats") && (
-        <dl className={`m-0 grid grid-cols-[1fr_auto] gap-x-4 gap-y-2.5 text-[15px] ${partClass("stats", active)}`}>
+        <dl data-part="stats" data-active={active === "stats"} className={`m-0 grid grid-cols-[1fr_auto] gap-x-4 gap-y-2.5 text-[15px] ${partClass("stats", active)}`}>
           {hero.stats.map(([label, value]) => (
             <div key={label} className="contents">
               <dt className="text-muted-foreground">{label}</dt>
@@ -51,7 +51,7 @@ export function CharacterPlate({ active, parts = ALL }: CharacterPlateProps) {
         </dl>
       )}
       {parts.includes("bio") && (
-        <div className={partClass("bio", active)}>
+        <div data-part="bio" data-active={active === "bio"} className={partClass("bio", active)}>
           <p className="m-0 text-[15px] text-muted-foreground">Biography</p>
           <p className="m-0 mt-1.5 text-[15px] leading-[1.5] text-foreground">{hero.biography}</p>
         </div>
