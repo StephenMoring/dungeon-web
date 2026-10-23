@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Link } from "react-router";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { getCampaigns, type Campaign } from "../api/campaigns";
+import { LoadError } from "@/app/components/shared/load-error";
 
 const FOCUS = "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold";
 const MotionLink = motion.create(Link);
@@ -12,11 +13,22 @@ function plural(count: number, noun: string): string {
 }
 
 export function CampaignList() {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  // null while loading, so neither the count nor the empty state claims anything yet.
+  const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
-  useEffect(() => {
-    getCampaigns().then(setCampaigns);
+  const loadCampaigns = useCallback(() => {
+    setLoadFailed(false);
+    setCampaigns(null);
+    getCampaigns()
+      .then(setCampaigns)
+      .catch((err: unknown) => {
+        console.error(err);
+        setLoadFailed(true);
+      });
   }, []);
+
+  useEffect(loadCampaigns, [loadCampaigns]);
 
   return (
     <div className="h-full overflow-y-auto">
@@ -33,8 +45,8 @@ export function CampaignList() {
             <h1 className="m-0 break-words font-display text-[28px] font-normal leading-tight text-foreground max-[759px]:text-[24px]">
               Campaigns
             </h1>
-            <p className="m-0 mt-1 text-base text-muted-foreground tabular-nums">
-              {plural(campaigns.length, "campaign")}
+            <p className="m-0 mt-1 min-h-6 text-base text-muted-foreground tabular-nums">
+              {campaigns && plural(campaigns.length, "campaign")}
             </p>
           </div>
           <MotionLink
@@ -46,7 +58,9 @@ export function CampaignList() {
           </MotionLink>
         </header>
 
-        {campaigns.length === 0 ? (
+        {loadFailed ? (
+          <LoadError onRetry={loadCampaigns} />
+        ) : campaigns === null ? null : campaigns.length === 0 ? (
           <p className="m-0 rounded-[4px] border border-dashed border-border px-[18px] py-6 text-base text-muted-foreground">
             No campaigns yet. Forge a hero to begin one.
           </p>

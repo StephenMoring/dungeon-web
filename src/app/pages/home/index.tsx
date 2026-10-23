@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MotionConfig } from "motion/react";
 import { useNavigate } from "react-router";
 import { Loader2 } from "lucide-react";
@@ -11,23 +11,35 @@ import { createCampaign } from "@/app/api/campaigns";
 import { continueTarget } from "./continue-target";
 import { DashboardHero } from "./dashboard-hero";
 import { HeroRoster } from "./hero-roster";
+import { LoadError } from "@/app/components/shared/load-error";
 
 const FOCUS = "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold focus-visible:ring-0";
 
 export function Home() {
   const navigate = useNavigate();
-  const [characters, setCharacters] = useState<CharacterWithCampaign[]>([]);
+  // null while loading; the error flag stops the forge action from showing for a failed request.
+  const [characters, setCharacters] = useState<CharacterWithCampaign[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [campaignTarget, setCampaignTarget] = useState<CharacterWithCampaign | null>(null);
   const [campaignDescription, setCampaignDescription] = useState("");
   const [isCreatingCampaign, setIsCreatingCampaign] = useState(false);
   const [campaignError, setCampaignError] = useState<string | null>(null);
 
-  useEffect(() => {
-    getCharacters().then(setCharacters).catch(console.error);
+  const loadCharacters = useCallback(() => {
+    setLoadFailed(false);
+    setCharacters(null);
+    getCharacters()
+      .then(setCharacters)
+      .catch((err: unknown) => {
+        console.error(err);
+        setLoadFailed(true);
+      });
   }, []);
 
-  const target = continueTarget(characters);
-  const heroName = characters.find((i) => i.character.campaign_id != null)?.character.name;
+  useEffect(loadCharacters, [loadCharacters]);
+
+  const target = characters && continueTarget(characters);
+  const heroName = characters?.find((i) => i.character.campaign_id != null)?.character.name;
 
   function openCampaignDialog(item: CharacterWithCampaign) {
     setCampaignTarget(item);
@@ -51,8 +63,12 @@ export function Home() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="h-full overflow-y-auto bg-background">
-        <DashboardHero target={target} heroName={heroName} />
-        <HeroRoster items={characters} onBegin={openCampaignDialog} />
+        <DashboardHero
+          target={target}
+          heroName={heroName}
+          status={loadFailed ? <LoadError onRetry={loadCharacters} className="max-w-[40ch]" /> : undefined}
+        />
+        {characters && <HeroRoster items={characters} onBegin={openCampaignDialog} />}
       </div>
 
       <Dialog open={campaignTarget !== null} onOpenChange={(open) => { if (!open) setCampaignTarget(null); }}>
