@@ -41,7 +41,7 @@ export function Navbar({ variant = "solid" }: NavbarProps) {
           <SheetTrigger asChild>
             <button
               type="button"
-              className="min-[760px]:hidden inline-flex h-9 items-center gap-2 rounded-[4px] px-2 text-base font-medium text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold"
+              className="min-[760px]:hidden inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-[4px] px-2 text-base font-medium text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold"
             >
               <MenuIcon className="size-5" aria-hidden="true" />
               Menu

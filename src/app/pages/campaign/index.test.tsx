@@ -32,4 +32,17 @@ describe("Campaign play", () => {
     expect(screen.getByRole("textbox", { name: "Your action" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Act" })).toBeInTheDocument();
   });
+
+  it("announces new story messages politely", async () => {
+    render(
+      <MemoryRouter initialEntries={["/adventure/99"]}>
+        <Routes>
+          <Route path="/adventure/:id" element={<Campaign />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const log = await screen.findByRole("log");
+    expect(log).toHaveAttribute("aria-live", "polite");
+  });
 });

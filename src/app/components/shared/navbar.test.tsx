@@ -72,3 +72,11 @@ describe("Navbar links", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
+
+describe("Navbar tap targets", () => {
+  it("gives the phone Menu button and the avatar trigger 44px targets", () => {
+    renderAt("/campaigns");
+    expect(screen.getByRole("button", { name: "Menu" })).toHaveClass("min-h-11", "min-w-11");
+    expect(screen.getByRole("button", { name: "Open user menu" })).toHaveClass("size-11");
+  });
+});

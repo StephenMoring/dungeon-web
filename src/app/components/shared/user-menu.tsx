@@ -39,8 +39,9 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
+          type="button"
           aria-label="Open user menu"
-          className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold"
+          className="inline-flex size-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold"
         >
           {avatarElement}
         </button>

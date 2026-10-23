@@ -3,15 +3,13 @@ import { Link, useNavigate } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import { Label } from "../components/ui/label";
 import { Switch } from "../components/ui/switch";
-import { Slider } from "../components/ui/slider";
 import { Credits } from "../components/shared/credits";
+import { LabelledSlider } from "../components/shared/labelled-slider";
 
 const FOCUS = "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold";
 const PANEL = "rounded-[4px] border border-border bg-card";
 const SWITCH =
-  `${FOCUS} data-[state=checked]:bg-foreground data-[state=unchecked]:bg-input [&[data-state=checked]>span]:!bg-background [&[data-state=unchecked]>span]:!bg-foreground`;
-const SLIDER =
-  `[&_[data-slot=slider-track]]:h-1.5 [&_[data-slot=slider-track]]:bg-input [&_[data-slot=slider-range]]:bg-foreground [&_[data-slot=slider-thumb]]:border-foreground [&_[data-slot=slider-thumb]]:bg-foreground [&_[data-slot=slider-thumb]]:shadow-none [&_[data-slot=slider-thumb]]:ring-0 [&_[data-slot=slider-thumb]]:focus-visible:outline-solid [&_[data-slot=slider-thumb]]:focus-visible:outline-2 [&_[data-slot=slider-thumb]]:focus-visible:outline-offset-[3px] [&_[data-slot=slider-thumb]]:focus-visible:outline-gold`;
+  `${FOCUS} ring-0 focus-visible:ring-0 data-[state=checked]:bg-foreground data-[state=unchecked]:bg-input [&[data-state=checked]>span]:!bg-background [&[data-state=unchecked]>span]:!bg-foreground`;
 
 interface SectionProps {
   title: string;
@@ -112,14 +110,7 @@ export function Settings() {
                 <Label className="text-sm font-medium text-foreground">Master Volume</Label>
                 <span className="text-sm text-muted-foreground tabular-nums">{volume[0]}%</span>
               </div>
-              <Slider
-                aria-label="Master Volume"
-                value={volume}
-                onValueChange={setVolume}
-                max={100}
-                step={1}
-                className={`w-full ${SLIDER}`}
-              />
+              <LabelledSlider label="Master Volume" value={volume} onValueChange={setVolume} />
             </div>
           </div>
         </Section>
@@ -134,14 +125,7 @@ export function Settings() {
                 </div>
                 <span className="text-sm font-medium text-foreground">{creativityLabel}</span>
               </div>
-              <Slider
-                aria-label="Creativity Level"
-                value={aiCreativity}
-                onValueChange={setAiCreativity}
-                max={100}
-                step={1}
-                className={`w-full ${SLIDER}`}
-              />
+              <LabelledSlider label="Creativity Level" value={aiCreativity} onValueChange={setAiCreativity} />
             </div>
             <p className="m-0 border-t border-border px-[18px] py-4 text-sm text-muted-foreground">
               <strong className="font-semibold text-foreground">Tip:</strong> Lower creativity keeps the story more
@@ -174,7 +158,7 @@ export function Settings() {
         <div className="flex justify-end gap-3 border-t border-border pt-6 pb-2">
           <button
             type="button"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/dashboard")}
             className={`inline-flex h-11 items-center rounded-[4px] border border-input px-[22px] text-base font-medium text-foreground transition-colors hover:bg-raised ${FOCUS}`}
           >
             Cancel

@@ -153,7 +153,7 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
   return (
     <>
       <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto p-5">
-        <div className="flex flex-col gap-4">
+        <div role="log" aria-live="polite" aria-label="Story" className="flex flex-col gap-4">
           {messages.length === 0 && !isTyping && (
             <p className="max-w-[62ch] text-base text-faint">The story begins with your first action.</p>
           )}

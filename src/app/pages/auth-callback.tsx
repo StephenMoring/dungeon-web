@@ -64,7 +64,7 @@ export function AuthCallback() {
   if (error) {
     return (
       <div className="flex h-screen w-screen flex-col items-center justify-center gap-6 bg-background px-6">
-        <Wordmark />
+        <Wordmark linked={false} />
         <div className="flex max-w-sm items-start gap-2 text-muted-foreground">
           <AlertCircle className="mt-0.5 size-4 shrink-0 text-ember" aria-hidden="true" />
           <p role="alert" className="m-0 text-base">{error}</p>
@@ -81,7 +81,7 @@ export function AuthCallback() {
 
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-background px-6">
-      <Wordmark />
+      <Wordmark linked={false} />
       <p className="m-0 text-base text-muted-foreground" role="status">Opening the gate…</p>
     </div>
   );

@@ -87,7 +87,7 @@ export function DiceRoller({ onRoll }: DiceRollerProps) {
               className="inline-flex items-center gap-2"
             >
               <span className="sr-only">Rolled d{rolledOn}: </span>
-              <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-[2px] bg-ember px-2 text-base font-semibold tabular-nums text-[#1a0800]">
+              <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-[4px] bg-ember px-2 text-base font-semibold tabular-nums text-destructive-foreground">
                 {result}
               </span>
               {critical && <span className="text-sm font-semibold text-foreground">{critical}</span>}

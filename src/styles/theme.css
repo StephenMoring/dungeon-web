@@ -1,3 +1,4 @@
+/* Kept so the shadcn primitives' dark: utilities stay inert: nothing sets .dark, the palette is always dark. */
 @custom-variant dark (&:is(.dark *));
 
 /* Dark by default, no light mode: tokens are global. */
