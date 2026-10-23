@@ -16,7 +16,7 @@ React frontend for the Dungeon Master AI app. Users create characters, run campa
 ```
 src/
   main.tsx                     # Entry point
-  assets/art/                  # Public-domain paintings (jpg), used only via the art registry
+  assets/art/                  # Public-domain paintings (webp, ≤2000px, no metadata), used only via the art registry
   dev/                         # Dev-only preview: preview-session.ts (?preview=1) + fixtures.ts
   app/
     App.tsx                    # RouterProvider wrapper
@@ -44,7 +44,7 @@ src/
       ui/                        # shadcn/ui primitives only — don't add custom logic here
       shared/                    # Custom components reusable across pages
         layout.tsx               # App shell (navbar + outlet)
-        navbar.tsx               # variant "solid" | "overlay" (overlay on /dashboard)
+        navbar.tsx               # variant "solid" | "overlay" (overlay is rendered inside the dashboard hero; Layout skips the navbar there)
         nav-links.tsx
         wordmark.tsx             # `linked` prop
         user-menu.tsx
@@ -89,7 +89,7 @@ Dark fantasy, "B3" palette. Full rationale: `docs/superpowers/specs/2026-10-22-d
 - **Two faces** (loaded in `src/styles/fonts.css`, exposed as `--face-display` / `--face-body`): `font-display` (Metal Mania) only for the wordmark, page titles, and character and campaign names; `font-sans` (Barlow 400/500/600) for everything else. Use tabular figures on numbers.
 - **Gold** marks the one primary action per screen (44px button) and the focus ring (2px, 3px offset). **Ember** is only for wounds/HP, dice results and destructive emphasis.
 - Radius 4px; panels are surface fill + 1px border. No shadows (except menus/dialogs/popovers), blur, gradients (except the neutral black scrim over art), glows, emoji, icon-in-box decoration or uppercase tracked labels.
-- **Art**: paintings are public-domain files in `src/assets/art/`, registered in `src/app/art/registry.ts` (alt text, artist, licence, focal points). Render them with `ArtImage` and credit them with `Credits` (both in `components/shared/`); never import the jpgs directly.
+- **Art**: paintings are public-domain files in `src/assets/art/`, registered in `src/app/art/registry.ts` (alt text, artist, licence, focal points; pre-cut crops such as `wrath-band` set `creditOf` so they are credited once). Render them with `ArtImage` (lazy by default; pass `priority` only for a screen's above-the-fold hero) and credit them with `Credits` (both in `components/shared/`); never import the image files directly.
 - Motion on app screens is feedback only (press, hover, dialog, message arrive); the landing page has a richer motion layer. Respect `prefers-reduced-motion`.
 
 ## Visual checks
