@@ -6,7 +6,7 @@ import { SHEET_NOTES, type SheetPart } from "./sample-hero";
 import { GRID_WIDE, HEAD, MARGIN } from "./classes";
 
 const SLICES: { parts: SheetPart[]; notes: string[] }[] = [
-  { parts: ["name", "wounds"], notes: ["Name and calling", "Wounds"] },
+  { parts: ["name", "health"], notes: ["Name and calling", "Health"] },
   { parts: ["stats"], notes: ["Seven attributes", "Weighed, not obeyed", "Rolled from your words"] },
   { parts: ["bio"], notes: ["A life before"] },
 ];

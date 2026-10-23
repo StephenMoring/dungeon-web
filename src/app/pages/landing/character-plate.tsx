@@ -8,13 +8,13 @@ interface CharacterPlateProps {
   parts?: SheetPart[];
 }
 
-const ALL: SheetPart[] = ["name", "wounds", "stats", "bio"];
+const ALL: SheetPart[] = ["name", "health", "stats", "bio"];
 
 function partClass(part: SheetPart, active: SheetPart | null): string {
   return `rounded-[4px] px-3 py-3 transition-colors duration-200 ${active === part ? "bg-raised" : "bg-transparent"}`;
 }
 
-/** A real fragment of the character sheet: name, wounds, seven attributes, biography. */
+/** A real fragment of the character sheet: name, health, seven attributes, biography. */
 export function CharacterPlate({ active, parts = ALL }: CharacterPlateProps) {
   const hero = SAMPLE_HERO;
   return (
@@ -26,16 +26,16 @@ export function CharacterPlate({ active, parts = ALL }: CharacterPlateProps) {
           <p className="m-0 text-[15px] text-muted-foreground">{hero.campaign}</p>
         </div>
       )}
-      {parts.includes("wounds") && (
-        <div data-part="wounds" data-active={active === "wounds"} className={partClass("wounds", active)}>
+      {parts.includes("health") && (
+        <div data-part="health" data-active={active === "health"} className={partClass("health", active)}>
           <div className="flex items-baseline justify-between">
-            <span className="text-[15px] text-foreground">Wounds</span>
+            <span className="text-[15px] text-foreground">Health</span>
             <span className="tabular-nums text-foreground">
-              <span className="text-[28px] font-semibold">{hero.wounds.current}</span>
-              <span className="text-[15px] text-muted-foreground"> / {hero.wounds.max}</span>
+              <span className="text-[28px] font-semibold">{hero.health.current}</span>
+              <span className="text-[15px] text-muted-foreground"> / {hero.health.max}</span>
             </span>
           </div>
-          <div className="mt-2 h-2 rounded-[2px] bg-raised" role="img" aria-label={`Wounds ${hero.wounds.current} of ${hero.wounds.max}`}>
+          <div className="mt-2 h-2 rounded-[2px] bg-raised" role="img" aria-label={`Health ${hero.health.current} of ${hero.health.max}`}>
             <div className={`h-full rounded-[2px] bg-ember w-[64%]`} />
           </div>
         </div>

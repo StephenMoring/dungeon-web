@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { motion } from "motion/react";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
+import { formatModifier } from "./ability-modifier";
 
 interface CharacterSheetProps {
   character: CharacterData;
@@ -83,7 +84,7 @@ export function CharacterSheet({ character, onUpdate }: CharacterSheetProps) {
   };
 
   const { current, max } = character.hp;
-  const woundsShare = max > 0 ? Math.min(100, Math.max(0, (current / max) * 100)) : 0;
+  const healthShare = max > 0 ? Math.min(100, Math.max(0, (current / max) * 100)) : 0;
 
   return (
     <div className="p-5">
@@ -95,14 +96,14 @@ export function CharacterSheet({ character, onUpdate }: CharacterSheetProps) {
       </p>
 
       <div className="flex items-baseline justify-between">
-        <span className="text-[15px]">Wounds</span>
+        <span className="text-[15px]">Health</span>
         <b className="text-[26px] font-semibold tabular-nums">
           {current} <small className="text-[15px] font-normal text-muted-foreground">/ {max}</small>
         </b>
       </div>
       <div
         role="meter"
-        aria-label="Wounds"
+        aria-label="Health"
         aria-valuenow={current}
         aria-valuemin={0}
         aria-valuemax={max}
@@ -111,7 +112,7 @@ export function CharacterSheet({ character, onUpdate }: CharacterSheetProps) {
         <motion.div
           className="h-full rounded-[2px] bg-ember"
           initial={false}
-          animate={{ width: `${woundsShare}%` }}
+          animate={{ width: `${healthShare}%` }}
           transition={{ duration: 0.3 }}
         />
       </div>
@@ -120,7 +121,12 @@ export function CharacterSheet({ character, onUpdate }: CharacterSheetProps) {
         {(Object.keys(STAT_LABELS) as StatKey[]).map((stat) => (
           <div key={stat} className="contents">
             <dt className="text-muted-foreground">{STAT_LABELS[stat]}</dt>
-            <dd className="m-0 text-right font-semibold tabular-nums">{character.stats[stat]}</dd>
+            <dd className="m-0 text-right font-semibold tabular-nums">
+              {character.stats[stat]}
+              <span className="ml-2 inline-block min-w-[2.5ch] font-normal text-muted-foreground">
+                {formatModifier(character.stats[stat])}
+              </span>
+            </dd>
           </div>
         ))}
       </dl>
@@ -170,12 +176,12 @@ export function CharacterSheet({ character, onUpdate }: CharacterSheetProps) {
           <Field label="Race" value={character.race} onChange={(v) => updateField("race", v)} />
           <Field label="Background" value={character.background} onChange={(v) => updateField("background", v)} />
           <Field
-            label="Wounds"
+            label="Health"
             type="number"
             value={current}
             onChange={(v) => updateHP("current", parseInt(v) || 0)}
           />
-          <Field label="Wounds max" type="number" value={max} onChange={(v) => updateHP("max", parseInt(v) || 0)} />
+          <Field label="Health max" type="number" value={max} onChange={(v) => updateHP("max", parseInt(v) || 0)} />
           {(Object.keys(STAT_LABELS) as StatKey[]).map((stat) => (
             <Field
               key={stat}
