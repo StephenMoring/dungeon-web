@@ -1,11 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import { ARTWORKS, getArtwork, type ArtId } from './registry'
 
-const EVERY_ID: ArtId[] = ['pandemonium', 'wrath', 'pompeii', 'sadak', 'deluge']
+const EVERY_ID: ArtId[] = ['pandemonium', 'wrath', 'wrath-band', 'wrath-chip', 'pompeii', 'sadak', 'deluge']
 
 describe('art registry', () => {
-  it('zooms the wrath painting', () => {
-    expect(getArtwork('wrath').zoom).toBe(1.9)
+  it('pre-cuts the wrath band instead of zooming the full painting', () => {
+    expect(getArtwork('wrath').zoom).toBeUndefined()
+    expect(getArtwork('wrath-band').zoom).toBeUndefined()
+  })
+
+  it('ships every painting at most 2000px wide', () => {
+    for (const art of Object.values(ARTWORKS)) expect(art.width).toBeLessThanOrEqual(2000)
+  })
+
+  it('credits the wrath crops to the wrath painting', () => {
+    expect(getArtwork('wrath-band').creditOf).toBe('wrath')
+    expect(getArtwork('wrath-chip').creditOf).toBe('wrath')
+    expect(getArtwork('wrath-band').sourceUrl).toBe(getArtwork('wrath').sourceUrl)
   })
 
   it('gives every artwork alt text and a source url', () => {

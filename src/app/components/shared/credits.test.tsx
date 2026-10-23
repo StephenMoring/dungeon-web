@@ -16,4 +16,14 @@ describe('Credits', () => {
     )
     expect(screen.getAllByRole('link', { name: 'public domain' })).toHaveLength(2)
   })
+
+  it('credits a crop once, under its painting', () => {
+    render(<Credits ids={['wrath', 'wrath-band', 'wrath-chip']} />)
+    expect(screen.getAllByRole('link', { name: '“The Great Day of His Wrath”' })).toHaveLength(1)
+  })
+
+  it('gives its links the gold focus ring', () => {
+    render(<Credits ids={['pandemonium']} />)
+    for (const link of screen.getAllByRole('link')) expect(link).toHaveClass('focus-visible:outline-gold')
+  })
 })

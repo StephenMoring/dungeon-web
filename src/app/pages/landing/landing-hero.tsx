@@ -32,7 +32,7 @@ export function LandingHero({ onEnter }: LandingHeroProps) {
         animate={{ scale: 1 }}
         transition={{ duration: 1.6, ease: EASE_SOFT }}
       >
-        <ArtImage id="pompeii" className="h-full w-full" />
+        <ArtImage id="pompeii" priority className="h-full w-full" />
       </motion.div>
       <div aria-hidden="true" className={`pointer-events-none absolute inset-0 ${SCRIM}`} />
 

@@ -26,7 +26,7 @@ export function DashboardHero({ target, heroName }: DashboardHeroProps) {
   return (
     <section aria-labelledby="dashboard-title" className="relative h-[520px] max-[759px]:h-[560px]">
       <div className="absolute inset-0">
-        <ArtImage id="pandemonium" className="h-full w-full" />
+        <ArtImage id="pandemonium" priority className="h-full w-full" />
       </div>
       <div aria-hidden="true" className={`absolute inset-0 ${SCRIM}`} />
 

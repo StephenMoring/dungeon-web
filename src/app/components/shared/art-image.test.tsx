@@ -15,4 +15,18 @@ describe('ArtImage', () => {
     expect(screen.queryByRole('img')).toBeNull()
     expect(container.firstElementChild).toHaveClass('bg-background', 'h-40')
   })
+
+  it('lazy-loads and decodes off the main thread by default', () => {
+    render(<ArtImage id="deluge" />)
+    const img = screen.getByRole('img')
+    expect(img).toHaveAttribute('loading', 'lazy')
+    expect(img).toHaveAttribute('decoding', 'async')
+  })
+
+  it('loads eagerly at high priority when priority is set', () => {
+    render(<ArtImage id="pandemonium" priority />)
+    const img = screen.getByRole('img')
+    expect(img).toHaveAttribute('loading', 'eager')
+    expect(img).toHaveAttribute('fetchpriority', 'high')
+  })
 })

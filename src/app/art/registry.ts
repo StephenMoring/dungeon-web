@@ -1,10 +1,12 @@
-import pandemoniumSrc from '@/assets/art/pandemonium.jpg'
-import wrathSrc from '@/assets/art/wrath.jpg'
-import pompeiiSrc from '@/assets/art/pompeii.jpg'
-import sadakSrc from '@/assets/art/sadak.jpg'
-import delugeSrc from '@/assets/art/deluge.jpg'
+import pandemoniumSrc from '@/assets/art/pandemonium.webp'
+import wrathSrc from '@/assets/art/wrath.webp'
+import pompeiiSrc from '@/assets/art/pompeii.webp'
+import sadakSrc from '@/assets/art/sadak.webp'
+import delugeSrc from '@/assets/art/deluge.webp'
+import wrathBandSrc from '@/assets/art/wrath-band.webp'
+import wrathChipSrc from '@/assets/art/wrath-chip.webp'
 
-export type ArtId = 'pandemonium' | 'wrath' | 'pompeii' | 'sadak' | 'deluge'
+export type ArtId = 'pandemonium' | 'wrath' | 'wrath-band' | 'wrath-chip' | 'pompeii' | 'sadak' | 'deluge'
 
 export interface Artwork {
   id: ArtId
@@ -20,16 +22,29 @@ export interface Artwork {
   sourceUrl: string
   focal: { desktop: string; phone: string }
   zoom?: number
+  /** A crop of another painting: credits resolve to that painting, so it is credited once. */
+  creditOf?: ArtId
 }
 
 const PUBLIC_DOMAIN_URL = 'https://creativecommons.org/publicdomain/mark/1.0/'
+
+/** Shared by the full Wrath painting and its pre-cut crops (band, landing chip). */
+const WRATH_CREDIT = {
+  alt: 'A blood-red sun between collapsing mountains under a torn sky',
+  title: 'The Great Day of His Wrath',
+  artist: 'John Martin',
+  year: 'about 1851',
+  licenceName: 'public domain',
+  licenceUrl: PUBLIC_DOMAIN_URL,
+  sourceUrl: 'https://commons.wikimedia.org/wiki/File:John_Martin_-_The_Great_Day_of_His_Wrath_-_Google_Art_Project.jpg',
+}
 
 export const ARTWORKS: Record<ArtId, Artwork> = {
   pandemonium: {
     id: 'pandemonium',
     src: pandemoniumSrc,
-    width: 2634,
-    height: 1758,
+    width: 2000,
+    height: 1335,
     alt: 'An armoured warrior with shield and spear stands on a burning plain before a vast palace lit by torches, under a storm',
     title: 'Pandemonium',
     artist: 'John Martin',
@@ -41,26 +56,36 @@ export const ARTWORKS: Record<ArtId, Artwork> = {
     focal: { desktop: '64% 55%', phone: '70% 50%' },
   },
   wrath: {
+    ...WRATH_CREDIT,
     id: 'wrath',
     src: wrathSrc,
-    width: 3136,
-    height: 2023,
-    alt: 'A blood-red sun between collapsing mountains under a torn sky',
-    title: 'The Great Day of His Wrath',
-    artist: 'John Martin',
-    year: 'about 1851',
-    licenceName: 'public domain',
-    licenceUrl: PUBLIC_DOMAIN_URL,
-    sourceUrl:
-      'https://commons.wikimedia.org/wiki/File:John_Martin_-_The_Great_Day_of_His_Wrath_-_Google_Art_Project.jpg',
+    width: 2000,
+    height: 1291,
     focal: { desktop: '44% 34%', phone: '44% 34%' },
-    zoom: 1.9,
+  },
+  'wrath-band': {
+    ...WRATH_CREDIT,
+    id: 'wrath-band',
+    src: wrathBandSrc,
+    width: 2000,
+    height: 400,
+    focal: { desktop: '40% 50%', phone: '40% 50%' },
+    creditOf: 'wrath',
+  },
+  'wrath-chip': {
+    ...WRATH_CREDIT,
+    id: 'wrath-chip',
+    src: wrathChipSrc,
+    width: 800,
+    height: 240,
+    focal: { desktop: '42% 50%', phone: '42% 50%' },
+    creditOf: 'wrath',
   },
   pompeii: {
     id: 'pompeii',
     src: pompeiiSrc,
-    width: 2012,
-    height: 1252,
+    width: 2000,
+    height: 1245,
     alt: 'A burning red sky splits over a city on a far hill while people flee along a dark shore in the foreground',
     title: 'The Destruction of Pompeii and Herculaneum',
     artist: 'John Martin',
@@ -88,8 +113,8 @@ export const ARTWORKS: Record<ArtId, Artwork> = {
   deluge: {
     id: 'deluge',
     src: delugeSrc,
-    width: 3840,
-    height: 2499,
+    width: 2000,
+    height: 1302,
     alt: 'Black storm water heaves over a rock crowded with drowning people, under a dark sky lit by a pale sun and red fires',
     title: 'The Deluge',
     artist: 'John Martin',

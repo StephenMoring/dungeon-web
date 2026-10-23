@@ -38,7 +38,7 @@ export function TurnSection({ onEnter }: TurnSectionProps) {
             <span className="block">What do you</span>
             <span className="block">
               <span className="relative mr-[0.22em] inline-block h-[0.7em] w-[2.3em] overflow-hidden align-baseline">
-                <ArtImage id="wrath" className="absolute inset-0 h-full w-full" />
+                <ArtImage id="wrath-chip" className="absolute inset-0 h-full w-full" />
               </span>
               do?
             </span>
