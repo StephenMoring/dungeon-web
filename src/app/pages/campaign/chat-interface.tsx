@@ -2,17 +2,17 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/app/components/ui/input";
 import { motion, AnimatePresence } from "motion/react";
 import ReactMarkdown from "react-markdown";
-import { DiceRoller } from "./dice-roller";
+import { streamTurn } from "@/app/api/turn-stream";
+import type { Roll } from "@/app/api/turn-stream";
+import { RollCard } from "./roll-card";
 
 const FOCUS = "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold focus-visible:ring-0";
 
 
-interface Message {
-  id: string;
-  role: "user" | "dm";
-  content: string;
-  timestamp: Date;
-}
+type StoryItem =
+  | { kind: "message"; id: string; role: "user" | "dm"; content: string; timestamp: Date }
+  | { kind: "roll"; id: string; roll: Roll }
+  | { kind: "error"; id: string; content: string };
 
 interface ChatInterfaceProps {
   openingMessage?: string | null;
@@ -21,13 +21,18 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ openingMessage, characterId, onUserMessage }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>(
+  const [messages, setMessages] = useState<StoryItem[]>(
     openingMessage
-      ? [{ id: "1", role: "dm", content: openingMessage, timestamp: new Date() }]
+      ? [{ kind: "message", id: "1", role: "dm", content: openingMessage, timestamp: new Date() }]
       : []
   );
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  // While a live roll animates, narration is held here so the outcome isn't spoiled.
+  const dmIdRef = useRef<string | null>(null);
+  const heldRef = useRef(false);
+  const pendingRef = useRef("");
   const [historyLoaded, setHistoryLoaded] = useState(!!openingMessage);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -39,6 +44,7 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
       .then((res) => res.json() as Promise<{ id: number; role: string; content: string; created_at: string }[]>)
       .then((data) => {
         setMessages(data.map((m) => ({
+          kind: "message" as const,
           id: String(m.id),
           role: m.role as "user" | "dm",
           content: m.content,
@@ -55,91 +61,75 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
     if (list) list.scrollTop = list.scrollHeight;
   }, [messages, isTyping]);
 
-  const generateDMResponse = (userMessage: string): string => {
-    // Mock AI responses based on keywords
-    const lowerMessage = userMessage.toLowerCase();
+  const appendDm = (text: string) => {
+    const dmId = dmIdRef.current;
+    if (!dmId || !text) return;
+    setMessages((prev) =>
+      prev.some((m) => m.id === dmId)
+        ? prev.map((m) => (m.id === dmId && m.kind === "message" ? { ...m, content: m.content + text } : m))
+        : [...prev, { kind: "message", id: dmId, role: "dm", content: text, timestamp: new Date() }]
+    );
+  };
 
-    if (
-      lowerMessage.includes("enter") ||
-      lowerMessage.includes("go in") ||
-      lowerMessage.includes("proceed")
-    ) {
-      return "You step through the archway into a dimly lit corridor. Torches flicker on the walls, casting dancing shadows. You see two paths ahead: one leads north, where you hear the sound of running water, and another leads east, where a faint red glow emanates. Which path do you choose?";
-    } else if (
-      lowerMessage.includes("north") ||
-      lowerMessage.includes("water")
-    ) {
-      return "You head north toward the sound of water. The corridor opens into a cavern with an underground stream. A rickety wooden bridge spans the water. On the far side, you notice what appears to be a treasure chest. However, the bridge looks unstable. Roll for Perception (1d20 + modifier) to examine the bridge more closely.";
-    } else if (lowerMessage.includes("east") || lowerMessage.includes("glow")) {
-      return "You venture east toward the red glow. The air grows warmer as you approach. You enter a chamber with glowing red crystals embedded in the walls. In the center of the room stands a stone pedestal with an ornate dagger. However, you notice scorch marks on the floor around the pedestal. What's your next move?";
-    } else if (lowerMessage.includes("roll") || lowerMessage.includes("d20")) {
-      const roll = Math.floor(Math.random() * 20) + 1;
-      return `You rolled a ${roll}! ${roll >= 15
-        ? "Success! You notice that the bridge is trapped with a pressure plate mechanism. You carefully disarm it and cross safely."
-        : roll >= 10
-          ? "Partial success. You sense something is off about the bridge but can't quite pinpoint what. Proceed with caution."
-          : "The bridge appears safe to you, but your instincts tell you to be careful anyway."
-        }`;
-    } else if (
-      lowerMessage.includes("attack") ||
-      lowerMessage.includes("fight")
-    ) {
-      return "Roll for initiative! (1d20 + Dexterity modifier). You ready your weapon as the shadows begin to move...";
-    } else if (
-      lowerMessage.includes("inspect") ||
-      lowerMessage.includes("examine") ||
-      lowerMessage.includes("look")
-    ) {
-      return "You take a closer look at your surroundings. The stonework is ancient, dating back centuries. You notice faint inscriptions on the walls in a language you don't recognize. Make an Intelligence (Arcana) check if you wish to decipher them.";
-    } else if (
-      lowerMessage.includes("take") ||
-      lowerMessage.includes("grab") ||
-      lowerMessage.includes("pick up")
-    ) {
-      return "You reach out to take the item. As your fingers close around it, you hear a soft click... Roll a Dexterity saving throw!";
-    } else {
-      const responses = [
-        "Interesting choice! The dungeon seems to respond to your action. What happens next depends on your next move.",
-        "You proceed cautiously. The atmosphere in the dungeon shifts slightly. You sense that something is watching you from the shadows.",
-        "As you take action, you hear a distant rumbling. The dungeon is alive with ancient magic. How do you respond?",
-        "Your action echoes through the chamber. A faint breeze carries whispers of forgotten adventurers. What's your next step?",
-        "The dungeon holds many secrets. Your decision leads you deeper into its mysteries. What do you do next?",
-      ];
-      return responses[Math.floor(Math.random() * responses.length)];
-    }
+  const insertRoll = (roll: Roll) => {
+    const dmId = dmIdRef.current;
+    const item: StoryItem = { kind: "roll", id: `roll-${dmId}`, roll };
+    setMessages((prev) => {
+      // The card sits above this turn's narration, even if some text already arrived.
+      const index = prev.findIndex((m) => m.id === dmId);
+      return index === -1 ? [...prev, item] : [...prev.slice(0, index), item, ...prev.slice(index)];
+    });
+  };
+
+  const handleRollSettled = () => {
+    heldRef.current = false;
+    const pending = pendingRef.current;
+    pendingRef.current = "";
+    appendDm(pending);
   };
 
   const handleSend = async () => {
-    if (!input.trim() || !characterId) return;
+    const text = input;
+    if (!text.trim() || !characterId || isStreaming) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-      timestamp: new Date(),
-    };
+    const now = Date.now();
+    dmIdRef.current = `dm-${now}`;
+    heldRef.current = false;
+    pendingRef.current = "";
 
-    setMessages((prev) => [...prev, userMessage]);
-    onUserMessage?.(input);
+    setMessages((prev) => [
+      ...prev,
+      { kind: "message", id: `user-${now}`, role: "user", content: text, timestamp: new Date() },
+    ]);
+    onUserMessage?.(text);
     setInput("");
     setIsTyping(true);
+    setIsStreaming(true);
 
     try {
-      const response = await fetch(`/api/characters/${characterId}/turns`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("dungeon_jwt")}` },
-        body: JSON.stringify({ message: input }),
-      });
-
-      const data = await response.json() as { message: string };
-      const content = data.message;
-
+      for await (const event of streamTurn(characterId, text)) {
+        if (event.type === "roll") {
+          setIsTyping(false);
+          heldRef.current = true;
+          insertRoll(event.roll);
+        } else if (event.type === "text") {
+          setIsTyping(false);
+          if (heldRef.current) pendingRef.current += event.text;
+          else appendDm(event.text);
+        } else if (event.type === "error") {
+          setMessages((prev) => [...prev, { kind: "error", id: `error-${now}`, content: event.detail }]);
+          setInput(text);
+        }
+      }
+    } catch (error) {
       setMessages((prev) => [
         ...prev,
-        { id: Date.now().toString(), role: "dm", content, timestamp: new Date() },
+        { kind: "error", id: `error-${now}`, content: error instanceof Error ? error.message : "Something went wrong" },
       ]);
+      setInput(text);
     } finally {
       setIsTyping(false);
+      setIsStreaming(false);
     }
   };
 
@@ -158,7 +148,16 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
             <p className="max-w-[62ch] text-base text-faint">The story begins with your first action.</p>
           )}
           <AnimatePresence initial={false}>
-            {messages.map((message) => (
+            {messages.map((message) =>
+              message.kind === "roll" ? (
+                <motion.div key={message.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                  <RollCard roll={message.roll} animate onSettled={handleRollSettled} />
+                </motion.div>
+              ) : message.kind === "error" ? (
+                <p key={message.id} role="alert" className="max-w-[62ch] text-[15px] text-destructive">
+                  {message.content}
+                </p>
+              ) : (
               <motion.div
                 key={message.id}
                 initial={{ opacity: 0, y: 6 }}
@@ -175,7 +174,8 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
                   <ReactMarkdown>{message.content.replace(/\\n/g, "\n")}</ReactMarkdown>
                 </div>
               </motion.div>
-            ))}
+              )
+            )}
           </AnimatePresence>
           {isTyping && (
             <motion.div
@@ -198,13 +198,13 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
           )}
         </div>
       </div>
-      <div className="shrink-0 space-y-3 border-t border-border p-5 max-[759px]:p-4">
-        <DiceRoller />
+      <div className="shrink-0 border-t border-border p-5 max-[759px]:p-4">
         <div className="flex gap-2.5">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
+            disabled={isStreaming}
             aria-label="Your action"
             placeholder="What do you do?"
             className={`h-11 flex-1 rounded-[4px] border-input bg-raised px-3.5 text-[15px] placeholder:text-faint dark:bg-raised md:text-[15px] ${FOCUS}`}
@@ -212,8 +212,9 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
           <motion.button
             type="button"
             onClick={handleSend}
+            disabled={isStreaming}
             whileTap={{ y: 1 }}
-            className={`h-11 shrink-0 rounded-[4px] bg-gold px-[22px] text-base font-semibold text-primary-foreground transition-[filter] hover:brightness-110 ${FOCUS}`}
+            className={`h-11 shrink-0 rounded-[4px] bg-gold px-[22px] text-base font-semibold text-primary-foreground transition-[filter] hover:brightness-110 disabled:opacity-60 disabled:hover:brightness-100 ${FOCUS}`}
           >
             Act
           </motion.button>
