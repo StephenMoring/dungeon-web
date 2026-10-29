@@ -117,11 +117,18 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
           if (heldRef.current) pendingRef.current += event.text;
           else appendDm(event.text);
         } else if (event.type === "error") {
+          // The turn wasn't saved, so held narration must not appear when the dice settle.
+          heldRef.current = false;
+          pendingRef.current = "";
+          dmIdRef.current = null;
           setMessages((prev) => [...prev, { kind: "error", id: `error-${now}`, content: event.detail }]);
           setInput(text);
         }
       }
     } catch (error) {
+      heldRef.current = false;
+      pendingRef.current = "";
+      dmIdRef.current = null;
       setMessages((prev) => [
         ...prev,
         { kind: "error", id: `error-${now}`, content: error instanceof Error ? error.message : "Something went wrong" },
@@ -204,7 +211,9 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            disabled={isStreaming}
+            // readOnly, not disabled: disabling would blur the box and lose focus every turn.
+            readOnly={isStreaming}
+            aria-disabled={isStreaming}
             aria-label="Your action"
             placeholder="What do you do?"
             className={`h-11 flex-1 rounded-[4px] border-input bg-raised px-3.5 text-[15px] placeholder:text-faint dark:bg-raised md:text-[15px] ${FOCUS}`}

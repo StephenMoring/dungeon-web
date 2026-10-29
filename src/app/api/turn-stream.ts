@@ -82,12 +82,18 @@ export async function* streamTurn(characterId: number, message: string): AsyncGe
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let finished = false;
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
     const { events, rest } = splitSseEvents(buffer);
     buffer = rest;
-    yield* events;
+    for (const event of events) {
+      if (event.type === "done" || event.type === "error") finished = true;
+      yield event;
+    }
   }
+  // A stream that closes without done/error was cut off; the turn wasn't saved.
+  if (!finished) yield { type: "error", detail: "Connection lost before the turn finished" };
 }

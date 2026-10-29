@@ -105,10 +105,39 @@ describe("ChatInterface turns", () => {
     const user = await send("I sneak");
 
     const act = screen.getByRole("button", { name: "Act" });
+    const box = screen.getByRole("textbox", { name: "Your action" });
     expect(act).toBeDisabled();
-    expect(screen.getByRole("textbox", { name: "Your action" })).toBeDisabled();
+    expect(box).toHaveAttribute("aria-disabled", "true");
     await user.click(act);
+    await user.type(box, "{Enter}");
     expect(streamTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps focus in the input while a turn streams", async () => {
+    streamTurn.mockImplementation(async function* () {
+      yield { type: "thinking" } as TurnStreamEvent;
+      await new Promise(() => {});
+    });
+    const user = userEvent.setup();
+    const box = screen.getByRole("textbox", { name: "Your action" });
+
+    await user.type(box, "I sneak{Enter}");
+
+    expect(streamTurn).toHaveBeenCalledTimes(1);
+    expect(box).not.toBeDisabled();
+    expect(box).toHaveFocus();
+  });
+
+  it("drops held narration when the turn fails", async () => {
+    streamTurn.mockImplementation(
+      script({ type: "roll", roll: ROLL }, { type: "text", text: "They spot you." }, { type: "error", detail: "boom" }),
+    );
+    const user = await send("I sneak");
+
+    await screen.findByText("boom");
+    await user.click(screen.getByRole("button", { name: "Settle dice" }));
+
+    expect(screen.queryByText("They spot you.")).not.toBeInTheDocument();
   });
 
   it("no longer renders manual dice buttons", () => {

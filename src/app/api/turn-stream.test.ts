@@ -90,4 +90,19 @@ describe("streamTurn", () => {
       expect.objectContaining({ method: "POST", body: JSON.stringify({ message: "I sneak" }) }),
     );
   });
+
+  it("yields an error when the stream ends without done", async () => {
+    const encoder = new TextEncoder();
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode(sse("thinking", {}) + sse("text", { text: "You creep" })));
+        controller.close();
+      },
+    });
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(body, { status: 200 }))));
+
+    const events = await collect(streamTurn(1, "hi"));
+
+    expect(events[events.length - 1]).toEqual({ type: "error", detail: "Connection lost before the turn finished" });
+  });
 });
