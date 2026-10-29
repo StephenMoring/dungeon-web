@@ -30,10 +30,10 @@ src/
         index.tsx
         play-header.tsx
         art-band.tsx
-        chat-interface.tsx
+        chat-interface.tsx         # Streams turns (SSE) and renders story items: messages, roll cards, errors
+        roll-card.tsx              # Live d20 check result; narration is held until it settles
         character-sheet.tsx
         notes-section.tsx
-        dice-roller.tsx
       campaign-list.tsx
       character-creation.tsx
       history.tsx
@@ -110,7 +110,8 @@ Output (screenshots at desktop, tablet, mobile, and RESULT lines) goes under `.t
 
 ## Conventions
 
-- **No AI calls from the frontend.** All DM responses go through `dungeon-service` (FastAPI at `../dungeon-service`). The current `pages/campaign/chat-interface.tsx` uses mock responses — replace with API calls.
+- **No AI calls from the frontend.** All DM responses go through `dungeon-service` (FastAPI at `../dungeon-service`).
+- **Turns stream.** `src/app/api/turn-stream.ts` posts to `/api/characters/{id}/turns/stream` and parses Server-Sent Events (`thinking`, `roll`, `text`, `done`, `error`). Dice are rolled on the server; the frontend only animates the result. Rolls are not stored, so reloaded history shows narration only.
 - **Prefer shadcn/ui components** over MUI. MUI is a legacy dependency from the Figma export; avoid adding new MUI usage.
 - **Tailwind for all styling.** No inline styles or CSS modules.
 - **`@` alias** maps to `src/` — use `@/app/components/...` for imports.

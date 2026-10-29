@@ -3,6 +3,7 @@ import {
   PREVIEW_CHARACTERS,
   PREVIEW_CLASSES,
   PREVIEW_RACES,
+  PREVIEW_TURN_STREAM,
   PREVIEW_TURNS,
 } from "./fixtures";
 
@@ -31,8 +32,8 @@ function stubResponse(path: string, method: string): Response | null {
     }
     if (/^\/api\/characters\/\d+\/turns$/.test(path)) return json(PREVIEW_TURNS);
   }
-  if (method === "POST" && /^\/api\/characters\/\d+\/turns$/.test(path)) {
-    return json({ message: "The tower window goes dark. Something below the courtyard stones begins to knock." });
+  if (method === "POST" && /^\/api\/characters\/\d+\/turns\/stream$/.test(path)) {
+    return new Response(PREVIEW_TURN_STREAM, { status: 200, headers: { "Content-Type": "text/event-stream" } });
   }
   return null;
 }

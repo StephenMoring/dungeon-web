@@ -121,3 +121,24 @@ export const PREVIEW_RACES: Race[] = [
   { id: 2, race: "Dwarf", description: "Deep-delvers who remember every insult." },
   { id: 3, race: "Elf", description: "Long-lived, and sorry for it." },
 ];
+
+function sseEvent(event: string, data: unknown): string {
+  return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+}
+
+export const PREVIEW_TURN_STREAM: string = [
+  sseEvent("thinking", {}),
+  sseEvent("roll", {
+    stat: "perception",
+    stat_value: 6,
+    roll: 11,
+    total: 17,
+    difficulty: "medium",
+    target: 15,
+    success: true,
+    reason: "spotting the loose flagstone",
+  }),
+  sseEvent("text", { text: "Beneath the dog's paws one flagstone sits proud of the rest. " }),
+  sseEvent("text", { text: "You lever it up: a rusted key, wrapped in a bell-ringer's glove. What do you do?" }),
+  sseEvent("done", { message_id: 999 }),
+].join("");
