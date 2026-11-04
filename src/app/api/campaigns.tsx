@@ -50,3 +50,12 @@ export async function getCampaigns(): Promise<Campaign[]> {
   console.log(campaigns);
   return campaigns;
 }
+
+/** Deletes one of the player's campaigns with its story and memories; its characters are kept. */
+export async function deleteCampaign(campaignId: number): Promise<void> {
+  const response = await fetch(`${API_URL}/campaigns/${campaignId}`, {
+    method: "DELETE",
+    headers: { "Authorization": `Bearer ${localStorage.getItem("dungeon_jwt")}` },
+  });
+  if (!response.ok) throw new Error(`Failed to delete campaign: ${response.status}`);
+}

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Link } from "react-router";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { getCampaigns, type Campaign } from "../api/campaigns";
 import { LoadError } from "@/app/components/shared/load-error";
+import { DeleteCampaignDialog } from "./delete-campaign-dialog";
 
 const FOCUS = "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold";
 const MotionLink = motion.create(Link);
@@ -29,6 +30,10 @@ export function CampaignList() {
   }, []);
 
   useEffect(loadCampaigns, [loadCampaigns]);
+
+  const removeCampaign = (campaignId: number) => {
+    setCampaigns((current) => current && current.filter((c) => c.id !== campaignId));
+  };
 
   return (
     <div className="h-full overflow-y-auto">
@@ -89,13 +94,13 @@ export function CampaignList() {
                     Continue
                     <span className="sr-only">: {campaign.name}</span>
                   </Link>
-                  <button
-                    type="button"
-                    aria-label={`Delete ${campaign.name}`}
-                    className={`inline-flex size-11 items-center justify-center rounded-[4px] text-faint transition-colors hover:text-ember ${FOCUS}`}
-                  >
-                    <Trash2 className="size-4" aria-hidden="true" />
-                  </button>
+                  {campaign.id !== null && (
+                    <DeleteCampaignDialog
+                      campaignId={campaign.id}
+                      campaignName={campaign.name}
+                      onDeleted={removeCampaign}
+                    />
+                  )}
                 </div>
               </li>
             ))}
