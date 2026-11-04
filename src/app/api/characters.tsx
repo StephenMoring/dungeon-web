@@ -67,6 +67,14 @@ export async function getRaces(): Promise<Race[]> {
   return await response.json();
 }
 
+export async function getCharacter(id: number): Promise<Character> {
+  const response = await fetch(`${API_URL}/characters/${id}`, {
+    headers: { "Authorization": `Bearer ${localStorage.getItem("dungeon_jwt")}` },
+  });
+  if (!response.ok) throw new Error(`Failed to fetch character: ${response.status}`);
+  return await response.json();
+}
+
 export async function getCharacters(): Promise<CharacterWithCampaign[]> {
   const response = await fetch(`${API_URL}/characters/`, {
     headers: {

@@ -26,13 +26,13 @@ export const PREVIEW_CAMPAIGNS: Campaign[] = [
 ];
 
 const stats = {
-  strength: 14,
-  perception: 11,
-  endurance: 13,
-  charisma: 9,
-  intelligence: 10,
-  agility: 12,
-  luck: 8,
+  strength: 7,
+  perception: 5,
+  endurance: 6,
+  charisma: 4,
+  intelligence: 5,
+  agility: 6,
+  luck: 3,
 };
 
 export const PREVIEW_CHARACTERS: CharacterWithCampaign[] = [

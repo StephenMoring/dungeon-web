@@ -31,6 +31,11 @@ function stubResponse(path: string, method: string): Response | null {
       return json(match?.character.id != null ? [{ id: match.character.id }] : []);
     }
     if (/^\/api\/characters\/\d+\/turns$/.test(path)) return json(PREVIEW_TURNS);
+    const oneCharacter = path.match(/^\/api\/characters\/(\d+)$/);
+    if (oneCharacter) {
+      const match = PREVIEW_CHARACTERS.find((c) => c.character.id === Number(oneCharacter[1]));
+      if (match) return json(match.character);
+    }
   }
   if (method === "POST" && /^\/api\/characters\/\d+\/turns\/stream$/.test(path)) {
     return new Response(PREVIEW_TURN_STREAM, { status: 200, headers: { "Content-Type": "text/event-stream" } });
