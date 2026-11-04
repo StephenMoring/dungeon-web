@@ -1,4 +1,4 @@
-const API_URL = "/api";
+import { apiFetch } from "./http";
 
 export interface Roll {
   stat: string;
@@ -65,11 +65,10 @@ async function errorDetail(response: Response): Promise<string> {
 }
 
 export async function* streamTurn(characterId: number, message: string): AsyncGenerator<TurnStreamEvent> {
-  const response = await fetch(`${API_URL}/characters/${characterId}/turns/stream`, {
+  const response = await apiFetch(`/characters/${characterId}/turns/stream`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${localStorage.getItem("dungeon_jwt")}`,
     },
     body: JSON.stringify({ message }),
   });

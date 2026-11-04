@@ -1,118 +1,132 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, act } from "@testing-library/react";
-import { AuthProvider, useAuth } from "./auth-context";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { render, screen, act, waitFor } from "@testing-library/react";
+import { AuthProvider, useAuth, type User } from "./auth-context";
 
-// Helper: component that renders auth state
 function AuthDisplay() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, status } = useAuth();
   return (
     <div>
-      <span data-testid="authenticated">{String(isAuthenticated)}</span>
+      <span data-testid="status">{status}</span>
       <span data-testid="username">{user?.username ?? "none"}</span>
     </div>
   );
 }
 
-// Helper: component that calls login
-function LoginButton({ jwt, user }: { jwt: string; user: Parameters<ReturnType<typeof useAuth>["login"]>[1] }) {
+function LoginButton({ user }: { user: User }) {
   const { login } = useAuth();
-  return <button onClick={() => login(jwt, user)}>Login</button>;
+  return <button onClick={() => login(user)}>Login</button>;
 }
 
-// Helper: component that calls logout
 function LogoutButton() {
   const { logout } = useAuth();
-  return <button onClick={logout}>Logout</button>;
+  return <button onClick={() => void logout()}>Logout</button>;
+}
+
+const fetchMock = vi.fn();
+
+function respond(status: number, body?: unknown) {
+  return Promise.resolve(new Response(body === undefined ? null : JSON.stringify(body), { status }));
 }
 
 beforeEach(() => {
   localStorage.clear();
-  vi.restoreAllMocks();
+  fetchMock.mockReset();
+  vi.stubGlobal("fetch", fetchMock);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe("AuthProvider", () => {
-  it("starts unauthenticated when localStorage is empty", () => {
+  it("is loading until the server says who is signed in", () => {
+    fetchMock.mockReturnValue(new Promise(() => {}));
     render(<AuthProvider><AuthDisplay /></AuthProvider>);
-    expect(screen.getByTestId("authenticated").textContent).toBe("false");
+
+    expect(screen.getByTestId("status").textContent).toBe("loading");
+  });
+
+  it("asks /auth/me with the cookie, never a stored token", async () => {
+    fetchMock.mockReturnValue(respond(200, { id: 1, username: "Steph", avatar_url: "a.png" }));
+    render(<AuthProvider><AuthDisplay /></AuthProvider>);
+
+    await waitFor(() => expect(screen.getByTestId("status").textContent).toBe("signed-in"));
+    expect(screen.getByTestId("username").textContent).toBe("Steph");
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/auth/me");
+    expect(init.credentials).toBe("same-origin");
+    expect(new Headers(init.headers).has("Authorization")).toBe(false);
+  });
+
+  it("is signed out when there is no session", async () => {
+    fetchMock.mockReturnValue(respond(401, { detail: "Not signed in" }));
+    render(<AuthProvider><AuthDisplay /></AuthProvider>);
+
+    await waitFor(() => expect(screen.getByTestId("status").textContent).toBe("signed-out"));
     expect(screen.getByTestId("username").textContent).toBe("none");
   });
 
-  it("restores authenticated state from valid localStorage", () => {
-    localStorage.setItem("dungeon_jwt", "token123");
-    localStorage.setItem("dungeon_user", JSON.stringify({ id: "1", username: "Steph", avatar: null, email: null }));
-
+  it("is signed out when the server can't be reached", async () => {
+    fetchMock.mockRejectedValue(new TypeError("offline"));
     render(<AuthProvider><AuthDisplay /></AuthProvider>);
 
-    expect(screen.getByTestId("authenticated").textContent).toBe("true");
-    expect(screen.getByTestId("username").textContent).toBe("Steph");
+    await waitFor(() => expect(screen.getByTestId("status").textContent).toBe("signed-out"));
   });
 
-  it("clears invalid localStorage on mount and stays unauthenticated", () => {
-    localStorage.setItem("dungeon_jwt", "");
-    localStorage.setItem("dungeon_user", JSON.stringify({ id: "1", username: "Steph", avatar: null, email: null }));
-
+  it("deletes tokens an older version left in localStorage", async () => {
+    localStorage.setItem("dungeon_jwt", "old-token");
+    localStorage.setItem("dungeon_user", "{}");
+    fetchMock.mockReturnValue(respond(401));
     render(<AuthProvider><AuthDisplay /></AuthProvider>);
 
-    expect(screen.getByTestId("authenticated").textContent).toBe("false");
+    await waitFor(() => expect(screen.getByTestId("status").textContent).toBe("signed-out"));
     expect(localStorage.getItem("dungeon_jwt")).toBeNull();
     expect(localStorage.getItem("dungeon_user")).toBeNull();
   });
 
-  it("clears malformed user JSON on mount and stays unauthenticated", () => {
-    localStorage.setItem("dungeon_jwt", "token123");
-    localStorage.setItem("dungeon_user", "not-json{{{");
-
-    render(<AuthProvider><AuthDisplay /></AuthProvider>);
-
-    expect(screen.getByTestId("authenticated").textContent).toBe("false");
-    expect(localStorage.getItem("dungeon_jwt")).toBeNull();
-  });
-
-  it("clears user missing required fields on mount", () => {
-    localStorage.setItem("dungeon_jwt", "token123");
-    localStorage.setItem("dungeon_user", JSON.stringify({ avatar: null })); // missing id + username
-
-    render(<AuthProvider><AuthDisplay /></AuthProvider>);
-
-    expect(screen.getByTestId("authenticated").textContent).toBe("false");
-  });
-
-  it("login() sets user and persists to localStorage", async () => {
-    const user = { id: "42", username: "Adventurer", avatar: null, email: "a@b.com" };
+  it("login() signs in without storing anything in the page", async () => {
+    fetchMock.mockReturnValue(respond(401));
     render(
       <AuthProvider>
         <AuthDisplay />
-        <LoginButton jwt="jwt-abc" user={user} />
-      </AuthProvider>
+        <LoginButton user={{ id: "42", username: "Adventurer", avatar: null, email: null }} />
+      </AuthProvider>,
     );
+    await waitFor(() => expect(screen.getByTestId("status").textContent).toBe("signed-out"));
 
-    await act(async () => {
-      screen.getByText("Login").click();
-    });
+    await act(async () => screen.getByText("Login").click());
 
-    expect(screen.getByTestId("authenticated").textContent).toBe("true");
+    expect(screen.getByTestId("status").textContent).toBe("signed-in");
     expect(screen.getByTestId("username").textContent).toBe("Adventurer");
-    expect(localStorage.getItem("dungeon_jwt")).toBe("jwt-abc");
-    expect(JSON.parse(localStorage.getItem("dungeon_user")!).username).toBe("Adventurer");
+    expect(localStorage.length).toBe(0);
   });
 
-  it("logout() clears user and localStorage", async () => {
-    localStorage.setItem("dungeon_jwt", "token123");
-    localStorage.setItem("dungeon_user", JSON.stringify({ id: "1", username: "Steph", avatar: null, email: null }));
+  it("logout() ends the session on the server and signs out", async () => {
+    fetchMock
+      .mockReturnValueOnce(respond(200, { id: 1, username: "Steph", avatar_url: "" }))
+      .mockReturnValueOnce(respond(204));
+    render(<AuthProvider><AuthDisplay /><LogoutButton /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("status").textContent).toBe("signed-in"));
 
-    render(
-      <AuthProvider>
-        <AuthDisplay />
-        <LogoutButton />
-      </AuthProvider>
-    );
+    await act(async () => screen.getByText("Logout").click());
 
-    await act(async () => {
-      screen.getByText("Logout").click();
-    });
+    await waitFor(() => expect(screen.getByTestId("status").textContent).toBe("signed-out"));
+    const [url, init] = fetchMock.mock.calls[1];
+    expect(url).toBe("/api/auth/logout");
+    expect(init.method).toBe("POST");
+    expect(new Headers(init.headers).get("X-Requested-With")).toBe("dungeon-web");
+  });
 
-    expect(screen.getByTestId("authenticated").textContent).toBe("false");
-    expect(localStorage.getItem("dungeon_jwt")).toBeNull();
-    expect(localStorage.getItem("dungeon_user")).toBeNull();
+  it("logout() still signs out locally when the server call fails", async () => {
+    fetchMock
+      .mockReturnValueOnce(respond(200, { id: 1, username: "Steph", avatar_url: "" }))
+      .mockRejectedValueOnce(new TypeError("offline"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<AuthProvider><AuthDisplay /><LogoutButton /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("status").textContent).toBe("signed-in"));
+
+    await act(async () => screen.getByText("Logout").click());
+
+    await waitFor(() => expect(screen.getByTestId("status").textContent).toBe("signed-out"));
   });
 });

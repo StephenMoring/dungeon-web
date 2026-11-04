@@ -53,7 +53,7 @@ src/
         protected-route.tsx
         image-with-fallback.tsx
     context/                     # React contexts
-      auth-context.tsx           # JWT auth state, useAuth hook
+      auth-context.tsx           # Session state from GET /api/auth/me (status loading | signed-in | signed-out), useAuth hook
   styles/                      # Global CSS (index, theme, fonts, tailwind)
 ```
 
@@ -110,6 +110,7 @@ Output (screenshots at desktop, tablet, mobile, and RESULT lines) goes under `.t
 
 ## Conventions
 
+- **API calls go through `apiFetch` (`src/app/api/http.ts`).** The session is an httpOnly cookie the browser sends itself; page code never sees or stores a token, so never put one in `localStorage`. `apiFetch` adds `X-Requested-With: dungeon-web`, which the API requires on writes. Sign-in state comes from `/api/auth/me`; preview mode stubs it.
 - **No AI calls from the frontend.** All DM responses go through `dungeon-service` (FastAPI at `../dungeon-service`).
 - **Turns stream.** `src/app/api/turn-stream.ts` posts to `/api/characters/{id}/turns/stream` and parses Server-Sent Events (`thinking`, `roll`, `text`, `done`, `error`). Dice are rolled on the server; the frontend only animates the result. Rolls are not stored, so reloaded history shows narration only.
 - **Prefer shadcn/ui components** over MUI. MUI is a legacy dependency from the Figma export; avoid adding new MUI usage.

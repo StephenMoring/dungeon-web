@@ -11,8 +11,10 @@ vi.mock("@/app/api/campaigns", () => ({ createCampaign: vi.fn() }));
 const mockAuth = {
   user: { id: "1", username: "Steph", avatar: null, email: null },
   isAuthenticated: true,
+
+  status: "signed-in" as const,
   login: () => {},
-  logout: () => {},
+  logout: async () => {},
 };
 
 function renderAt(path: string) {

@@ -129,9 +129,6 @@ export function CharacterCreation() {
         hero_class: selectedClass,
         biography,
         age: age!,
-        user_id: Number(user.id),
-        campaign_id: null,
-        id: null,
         ...stats,
       });
       navigate("/dashboard");

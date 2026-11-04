@@ -15,6 +15,8 @@ function makeAuth(overrides: Partial<{ avatar: string | null; username: string }
   const auth = {
     user: { id: "42", username: "Steph", avatar: null, email: null, ...overrides },
     isAuthenticated: true,
+
+    status: "signed-in" as const,
     login: () => {},
     logout,
   };
@@ -77,7 +79,7 @@ describe("UserMenu", () => {
   });
 
   it("renders nothing when user is null", () => {
-    const auth = { user: null, isAuthenticated: false, login: () => {}, logout: () => {} };
+    const auth = { user: null, isAuthenticated: false, status: "signed-out" as const, login: () => {}, logout: async () => {} };
     const { container } = render(
       <AuthContext.Provider value={auth}>
         <MemoryRouter><UserMenu /></MemoryRouter>

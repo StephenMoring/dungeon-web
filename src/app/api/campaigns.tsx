@@ -1,4 +1,4 @@
-const API_URL = "/api";
+import { apiFetch } from "./http";
 
 export interface Campaign {
   id: number | null;
@@ -15,11 +15,10 @@ export interface CreateCampaignResponse {
 }
 
 export async function createCampaign(characterId: number, description: string): Promise<CreateCampaignResponse> {
-  const response = await fetch(`${API_URL}/campaigns/`, {
+  const response = await apiFetch(`/campaigns/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${localStorage.getItem("dungeon_jwt")}`,
     },
     body: JSON.stringify({ character_id: characterId, description }),
   });
@@ -28,9 +27,7 @@ export async function createCampaign(characterId: number, description: string): 
 }
 
 export async function getCampaignCharacterId(campaignId: string): Promise<number> {
-  const response = await fetch(`${API_URL}/campaigns/${campaignId}/characters`, {
-    headers: { "Authorization": `Bearer ${localStorage.getItem("dungeon_jwt")}` },
-  });
+  const response = await apiFetch(`/campaigns/${campaignId}/characters`);
   if (!response.ok) throw new Error(`Failed to fetch campaign characters: ${response.status}`);
   const characters = await response.json() as { id: number }[];
   if (!characters.length) throw new Error("No character found for this campaign");
@@ -38,11 +35,7 @@ export async function getCampaignCharacterId(campaignId: string): Promise<number
 }
 
 export async function getCampaigns(): Promise<Campaign[]> {
-  const response = await fetch(`${API_URL}/campaigns/`, {
-    headers: {
-      "Authorization": `Bearer ${localStorage.getItem("dungeon_jwt")}`
-    }
-  });
+  const response = await apiFetch(`/campaigns/`);
   if (!response.ok) {
     throw new Error(`Failed to fetch campaigns: ${response.status}`);
   }
@@ -53,9 +46,8 @@ export async function getCampaigns(): Promise<Campaign[]> {
 
 /** Deletes one of the player's campaigns with its story and memories; its characters are kept. */
 export async function deleteCampaign(campaignId: number): Promise<void> {
-  const response = await fetch(`${API_URL}/campaigns/${campaignId}`, {
+  const response = await apiFetch(`/campaigns/${campaignId}`, {
     method: "DELETE",
-    headers: { "Authorization": `Bearer ${localStorage.getItem("dungeon_jwt")}` },
   });
   if (!response.ok) throw new Error(`Failed to delete campaign: ${response.status}`);
 }

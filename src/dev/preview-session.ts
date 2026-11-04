@@ -11,6 +11,8 @@ export function isPreviewRequested(search: string): boolean {
   return new URLSearchParams(search).get("preview") === "1";
 }
 
+const PREVIEW_USER = { id: 0, username: "Aldric", avatar_url: "" };
+
 function json(body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status: 200,
@@ -20,6 +22,7 @@ function json(body: unknown): Response {
 
 function stubResponse(path: string, method: string): Response | null {
   if (method === "GET") {
+    if (path === "/api/auth/me") return json(PREVIEW_USER);
     if (path === "/api/characters/") return json(PREVIEW_CHARACTERS);
     if (path === "/api/campaigns/") return json(PREVIEW_CAMPAIGNS);
     if (path === "/api/characters/classes") return json(PREVIEW_CLASSES);
@@ -37,19 +40,16 @@ function stubResponse(path: string, method: string): Response | null {
       if (match) return json(match.character);
     }
   }
+  if (method === "POST" && path === "/api/auth/logout") return new Response(null, { status: 204 });
   if (method === "POST" && /^\/api\/characters\/\d+\/turns\/stream$/.test(path)) {
     return new Response(PREVIEW_TURN_STREAM, { status: 200, headers: { "Content-Type": "text/event-stream" } });
   }
   return null;
 }
 
-// Visiting ?preview=1 leaves the fake JWT in localStorage; logging out clears it.
+// The session is an httpOnly cookie the page can't fake, so preview stubs /auth/me
+// to say "signed in" instead, for as long as the page stays in preview mode.
 export function startPreviewSession(): void {
-  localStorage.setItem("dungeon_jwt", "preview");
-  localStorage.setItem(
-    "dungeon_user",
-    JSON.stringify({ id: "preview", username: "Aldric", avatar: null, email: null }),
-  );
 
   const realFetch = window.fetch.bind(window);
   window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {

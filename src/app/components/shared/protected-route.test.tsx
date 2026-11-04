@@ -5,12 +5,13 @@ import { AuthContext } from "../../context/auth-context";
 import { ProtectedRoute } from "./protected-route";
 
 // Minimal AuthContext value factory
-function makeAuthCtx(isAuthenticated: boolean) {
+function makeAuthCtx(isAuthenticated: boolean, status?: "loading") {
   return {
     user: isAuthenticated ? { id: "1", username: "Steph", avatar: null, email: null } : null,
     isAuthenticated,
+    status: status ?? (isAuthenticated ? ("signed-in" as const) : ("signed-out" as const)),
     login: () => {},
-    logout: () => {},
+    logout: async () => {},
   };
 }
 
@@ -65,5 +66,23 @@ describe("ProtectedRoute", () => {
       </AuthContext.Provider>
     );
     expect(sessionStorage.getItem("dungeon_redirect_after_login")).toBe("/adventure/123");
+  });
+
+  it("waits, without redirecting, while the session is being checked", () => {
+    render(
+      <AuthContext.Provider value={makeAuthCtx(false, "loading")}>
+        <MemoryRouter initialEntries={["/dashboard"]}>
+          <Routes>
+            <Route path="/" element={<div>Landing</div>} />
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<div>Dashboard</div>} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>
+    );
+    expect(screen.queryByText("Landing")).not.toBeInTheDocument();
+    expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
+    expect(sessionStorage.getItem("dungeon_redirect_after_login")).toBeNull();
   });
 });

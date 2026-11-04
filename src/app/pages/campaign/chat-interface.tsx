@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { streamTurn } from "@/app/api/turn-stream";
 import type { Roll } from "@/app/api/turn-stream";
 import { RollCard } from "./roll-card";
+import { apiFetch } from "@/app/api/http";
 
 const FOCUS = "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold focus-visible:ring-0";
 
@@ -38,9 +39,7 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
 
   useEffect(() => {
     if (!characterId || historyLoaded) return;
-    fetch(`/api/characters/${characterId}/turns`, {
-      headers: { "Authorization": `Bearer ${localStorage.getItem("dungeon_jwt")}` },
-    })
+    apiFetch(`/characters/${characterId}/turns`)
       .then((res) => res.json() as Promise<{ id: number; role: string; content: string; created_at: string }[]>)
       .then((data) => {
         setMessages(data.map((m) => ({

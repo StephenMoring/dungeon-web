@@ -17,8 +17,8 @@ export function UserMenu() {
 
   const showImage = user.avatar !== null && !avatarError;
 
-  function handleLogout() {
-    logout();
+  async function handleLogout() {
+    await logout();
     navigate("/", { replace: true });
   }
 

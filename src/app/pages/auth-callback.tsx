@@ -1,20 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/app/context/auth-context";
-import type { User } from "@/app/context/auth-context";
+import { toUser, type ApiUser } from "@/app/context/auth-context";
+import { apiFetch } from "@/app/api/http";
 import { AlertCircle } from "lucide-react";
 import { Wordmark } from "@/app/components/shared/wordmark";
 
-interface BackendUser {
-  id: number;
-  discord_id: string;
-  username: string;
-  avatar_url: string;
-}
-
 interface CallbackResponse {
-  jwt: string;
-  user: BackendUser;
+  user: ApiUser;
 }
 
 export function AuthCallback() {
@@ -35,7 +28,8 @@ export function AuthCallback() {
       return;
     }
 
-    fetch("/api/auth/discord/callback", {
+    // The response sets the httpOnly session cookie; the token never reaches this page.
+    apiFetch("/auth/discord/callback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code }),
@@ -44,14 +38,8 @@ export function AuthCallback() {
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
         return res.json() as Promise<CallbackResponse>;
       })
-      .then(({ jwt, user: backendUser }) => {
-        const user: User = {
-          id: String(backendUser.id),
-          username: backendUser.username,
-          avatar: backendUser.avatar_url,
-          email: null,
-        };
-        login(jwt, user);
+      .then(({ user }) => {
+        login(toUser(user));
         const from = sessionStorage.getItem("dungeon_redirect_after_login") ?? "/dashboard";
         sessionStorage.removeItem("dungeon_redirect_after_login");
         navigate(from, { replace: true });

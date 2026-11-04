@@ -14,11 +14,19 @@ describe("preview session", () => {
     expect(isPreviewRequested("")).toBe(false);
   });
 
-  it("seeds a fake login and stubs the campaigns request", async () => {
+  it("signs in a fake user without touching storage, and stubs the campaigns request", async () => {
     startPreviewSession();
-    expect(localStorage.getItem("dungeon_jwt")).toBe("preview");
+    const me = await fetch("/api/auth/me");
+    expect(await me.json()).toEqual({ id: 0, username: "Aldric", avatar_url: "" });
+    expect(localStorage.getItem("dungeon_jwt")).toBeNull();
     const res = await fetch("/api/campaigns/");
     expect(await res.json()).toEqual(PREVIEW_CAMPAIGNS);
+  });
+
+  it("stubs logout", async () => {
+    startPreviewSession();
+    const res = await fetch("/api/auth/logout", { method: "POST" });
+    expect(res.status).toBe(204);
   });
 
   it("stubs the turn stream", async () => {
