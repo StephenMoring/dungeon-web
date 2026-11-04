@@ -1,6 +1,6 @@
 import type { components } from "@/types/api";
 import type { Campaign } from "./campaigns";
-import { apiFetch } from "./http";
+import { apiFetch, failureMessage } from "./http";
 
 
 export type Character = components["schemas"]["Character"];
@@ -47,7 +47,7 @@ export async function createCharacterPreview(data: CharacterDescriptionCreate): 
     },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error(`Failed to generate preview: ${response.status}`);
+  if (!response.ok) throw new Error(await failureMessage(response, "Failed to generate preview"));
   return await response.json();
 }
 

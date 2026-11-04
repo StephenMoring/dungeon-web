@@ -1,4 +1,4 @@
-import { apiFetch } from "./http";
+import { apiFetch, failureMessage } from "./http";
 
 export interface Campaign {
   id: number | null;
@@ -22,7 +22,7 @@ export async function createCampaign(characterId: number, description: string): 
     },
     body: JSON.stringify({ character_id: characterId, description }),
   });
-  if (!response.ok) throw new Error(`Failed to create campaign: ${response.status}`);
+  if (!response.ok) throw new Error(await failureMessage(response, "Failed to create campaign"));
   return await response.json();
 }
 

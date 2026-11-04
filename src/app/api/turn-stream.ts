@@ -1,4 +1,4 @@
-import { apiFetch } from "./http";
+import { apiFetch, errorDetail } from "./http";
 
 export interface Roll {
   stat: string;
@@ -54,14 +54,8 @@ export function splitSseEvents(buffer: string): { events: TurnStreamEvent[]; res
   return { events, rest };
 }
 
-async function errorDetail(response: Response): Promise<string> {
-  try {
-    const body = (await response.json()) as { detail?: unknown };
-    if (typeof body.detail === "string") return body.detail;
-  } catch {
-    // fall through to the generic message
-  }
-  return `Request failed (${response.status})`;
+async function turnError(response: Response): Promise<string> {
+  return (await errorDetail(response)) ?? `Request failed (${response.status})`;
 }
 
 export async function* streamTurn(characterId: number, message: string): AsyncGenerator<TurnStreamEvent> {
@@ -74,7 +68,7 @@ export async function* streamTurn(characterId: number, message: string): AsyncGe
   });
 
   if (!response.ok || !response.body) {
-    yield { type: "error", detail: await errorDetail(response) };
+    yield { type: "error", detail: await turnError(response) };
     return;
   }
 
