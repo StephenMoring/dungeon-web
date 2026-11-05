@@ -52,6 +52,8 @@ src/
         credits.tsx              # Artist / licence line for a painting
         protected-route.tsx
         image-with-fallback.tsx
+    auth/
+      discord-login.ts           # Discord sign-in link with the OAuth state check (startDiscordLogin, takeOAuthState)
     context/                     # React contexts
       auth-context.tsx           # Session state from GET /api/auth/me (status loading | signed-in | signed-out), useAuth hook
   styles/                      # Global CSS (index, theme, fonts, tailwind)
@@ -110,7 +112,7 @@ Output (screenshots at desktop, tablet, mobile, and RESULT lines) goes under `.t
 
 ## Conventions
 
-- **API calls go through `apiFetch` (`src/app/api/http.ts`).** The session is an httpOnly cookie the browser sends itself; page code never sees or stores a token, so never put one in `localStorage`. `apiFetch` adds `X-Requested-With: dungeon-web`, which the API requires on writes. Sign-in state comes from `/api/auth/me`; preview mode stubs it.
+- **API calls go through `apiFetch` (`src/app/api/http.ts`).** The session is an httpOnly cookie the browser sends itself; page code never sees or stores a token, so never put one in `localStorage`. `apiFetch` adds `X-Requested-With: dungeon-web`, which the API requires on writes. Sign-in state comes from `/api/auth/me`; preview mode stubs it. Discord sign-in must go through `startDiscordLogin()`: it stores a random OAuth `state`, and `/auth/callback` refuses any code whose state this browser didn't store (login CSRF).
 - **No AI calls from the frontend.** All DM responses go through `dungeon-service` (FastAPI at `../dungeon-service`).
 - **Turns stream.** `src/app/api/turn-stream.ts` posts to `/api/characters/{id}/turns/stream` and parses Server-Sent Events (`thinking`, `roll`, `text`, `done`, `error`). Dice are rolled on the server; the frontend only animates the result. Rolls are not stored, so reloaded history shows narration only.
 - **Prefer shadcn/ui components** over MUI. MUI is a legacy dependency from the Figma export; avoid adding new MUI usage.

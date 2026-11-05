@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/app/context/auth-context";
 import { toUser, type ApiUser } from "@/app/context/auth-context";
-import { apiFetch } from "@/app/api/http";
+import { apiFetch, errorDetail } from "@/app/api/http";
+import { takeOAuthState } from "@/app/auth/discord-login";
 import { AlertCircle } from "lucide-react";
 import { Wordmark } from "@/app/components/shared/wordmark";
 
@@ -23,6 +24,13 @@ export function AuthCallback() {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
 
+    // Only finish a login this browser started: otherwise someone else's login link
+    // would sign the player into that person's account.
+    if (!takeOAuthState(params.get("state"))) {
+      setError("This sign-in link didn't start here. Please log in again.");
+      return;
+    }
+
     if (!code) {
       setError("Missing authorization code. Please try logging in again.");
       return;
@@ -35,7 +43,7 @@ export function AuthCallback() {
       body: JSON.stringify({ code }),
     })
       .then(async (res) => {
-        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        if (!res.ok) throw new Error((await errorDetail(res)) ?? `Server error: ${res.status}`);
         return res.json() as Promise<CallbackResponse>;
       })
       .then(({ user }) => {

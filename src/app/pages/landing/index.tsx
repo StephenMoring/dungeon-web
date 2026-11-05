@@ -10,21 +10,10 @@ import { CampaignsSection } from "./campaigns-section";
 import { HeroesSection } from "./heroes-section";
 import { DescentSection } from "./descent-section";
 import { LandingFooter } from "./landing-footer";
-
-function buildDiscordOAuthUrl(): string {
-  const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID as string;
-  const redirectUri = import.meta.env.VITE_DISCORD_REDIRECT_URI as string;
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    response_type: "code",
-    scope: "identify email",
-  });
-  return `https://discord.com/oauth2/authorize?${params.toString()}`;
-}
+import { startDiscordLogin } from "@/app/auth/discord-login";
 
 function handleDiscordLogin() {
-  window.location.href = buildDiscordOAuthUrl();
+  startDiscordLogin();
 }
 
 /** Every painting on the page, in order of appearance, for the footer credits. */
