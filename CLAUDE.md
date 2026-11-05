@@ -59,6 +59,10 @@ src/
   styles/                      # Global CSS (index, theme, fonts, tailwind)
 ```
 
+## Production
+
+`Dockerfile` builds the app (`VITE_DISCORD_CLIENT_ID` / `VITE_DISCORD_REDIRECT_URI` are build args, baked into the bundle) and serves `dist/` with Caddy. `Caddyfile`: HTTPS for `SITE_ADDRESS`, `/api/*` proxied to the API with streaming flushed, React routes fall back to `index.html`, long-cached `/assets`, and security headers including a Content-Security-Policy (scripts from this origin only; Google Fonts; avatars from `cdn.discordapp.com`). A new external script, font or image host must be added to that CSP. `dist/` is build output and not committed. The stack and its guide live in `../dungeon-service/infra/prod/`.
+
 ## Dev Commands
 
 ```bash

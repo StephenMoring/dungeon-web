@@ -17,8 +17,9 @@
 /.next/
 /out/
 
-# production
+# production (built by the Dockerfile, never committed)
 /build
+/dist
 
 # misc
 .DS_Store
