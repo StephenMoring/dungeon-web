@@ -1,16 +1,17 @@
 import type { components } from "@/types/api";
 import type { Campaign } from "./campaigns";
-import { apiFetch, failureMessage } from "./http";
+import { apiFetch, errorDetail, failureMessage } from "./http";
 
 
 export type Character = components["schemas"]["Character"];
 export type HeroClass = components["schemas"]["HeroClass"];
 export type Race = components["schemas"]["Race"];
 export type CharacterDescriptionCreate = components["schemas"]["CharacterDescriptionCreate"];
-/** What a player saves; the server sets the id and owner, and campaigns assign themselves. */
-export type CharacterSave = Omit<Character, "id" | "user_id" | "campaign_id">;
 
+/** A generated sheet. Saving sends back only preview_token, which the server signed
+ * over this exact sheet for this player; stats are never chosen by the client. */
 export interface CharacterPreview {
+  preview_token: string;
   biography: string;
   age: number;
   strength: number;
@@ -27,15 +28,18 @@ export interface CharacterWithCampaign {
   campaign: Campaign | null;
 }
 
-export async function createCharacter(data: CharacterSave): Promise<Character> {
+export async function createCharacter(previewToken: string): Promise<Character> {
   const response = await apiFetch(`/characters/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify({ preview_token: previewToken }),
   });
-  if (!response.ok) throw new Error(`Failed to create character: ${response.status}`);
+  if (!response.ok) {
+    // e.g. "This character preview expired. Generate it again."
+    throw new Error((await errorDetail(response)) ?? `Failed to create character: ${response.status}`);
+  }
   return await response.json();
 }
 

@@ -75,6 +75,9 @@ export function CharacterCreation() {
   const [biography, setBiography] = useState("");
   const [age, setAge] = useState<number | null>(null);
   const [statsGenerated, setStatsGenerated] = useState(false);
+  // The server's signed preview, and the details it was generated from.
+  const [previewToken, setPreviewToken] = useState<string | null>(null);
+  const [previewFor, setPreviewFor] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
@@ -86,7 +89,10 @@ export function CharacterCreation() {
   }, []);
 
   const canGenerate = name && selectedClass && selectedRace && description;
-  const isValid = canGenerate && selectedBackground && statsGenerated;
+  const details = JSON.stringify([name, description, selectedClass, selectedRace]);
+  // Stats were generated from these details; after an edit they no longer match.
+  const previewIsStale = statsGenerated && previewFor !== details;
+  const isValid = canGenerate && selectedBackground && statsGenerated && !previewIsStale && previewToken;
 
   async function handleGenerate() {
     if (!canGenerate) return;
@@ -110,6 +116,8 @@ export function CharacterCreation() {
       });
       setBiography(preview.biography);
       setAge(preview.age);
+      setPreviewToken(preview.preview_token);
+      setPreviewFor(details);
       setStatsGenerated(true);
     } catch (err) {
       setGenerateError(err instanceof Error ? err.message : "Generation failed. Try again.");
@@ -119,18 +127,11 @@ export function CharacterCreation() {
   }
 
   async function handleCreate() {
-    if (!user) return;
+    if (!user || !previewToken) return;
     setIsSaving(true);
     setSaveError(null);
     try {
-      await createCharacter({
-        name,
-        description,
-        hero_class: selectedClass,
-        biography,
-        age: age!,
-        ...stats,
-      });
+      await createCharacter(previewToken);
       navigate("/dashboard");
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Failed to save character. Try again.");
@@ -235,6 +236,11 @@ export function CharacterCreation() {
                 Fill in your name, description, class, and race to generate stats
               </p>
             )}
+            {previewIsStale && !isGenerating && (
+              <p role="status" className="m-0 text-sm text-muted-foreground">
+                You changed the details. Generate again to update the stats.
+              </p>
+            )}
             {generateError && (
               <p role="alert" className="m-0 text-sm text-ember">{generateError}</p>
             )}
@@ -247,20 +253,11 @@ export function CharacterCreation() {
                       id={`stat-${stat}`}
                       type="number"
                       value={statsGenerated ? value : ""}
-                      onChange={(e) =>
-                        setStats({ ...stats, [stat]: parseInt(e.target.value) || 0 })
-                      }
+                      readOnly
                       className={`h-10 w-[72px] tabular-nums ${FIELD}`}
-                      min="1"
-                      max="10"
                       disabled={!statsGenerated}
                       placeholder={statsGenerated ? undefined : "—"}
                     />
-                    <span className="w-8 text-center text-sm font-medium tabular-nums text-muted-foreground">
-                      {statsGenerated
-                        ? `${Math.floor((value - 10) / 2) >= 0 ? "+" : ""}${Math.floor((value - 10) / 2)}`
-                        : ""}
-                    </span>
                   </div>
                 </li>
               ))}
