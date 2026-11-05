@@ -84,6 +84,7 @@ export function Home() {
             </Label>
             <Textarea
               id="campaign-description"
+              maxLength={2000}
               value={campaignDescription}
               onChange={(e) => setCampaignDescription(e.target.value)}
               placeholder="A dark dungeon crawl through an ancient dwarven fortress overrun by undead..."

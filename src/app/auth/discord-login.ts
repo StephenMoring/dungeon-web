@@ -15,7 +15,8 @@ export function buildDiscordOAuthUrl(state: string): string {
     client_id: import.meta.env.VITE_DISCORD_CLIENT_ID as string,
     redirect_uri: import.meta.env.VITE_DISCORD_REDIRECT_URI as string,
     response_type: "code",
-    scope: "identify email",
+    // Only the Discord id, name and avatar; the app never needs the email address.
+    scope: "identify",
     state,
   });
   return `https://discord.com/oauth2/authorize?${params.toString()}`;

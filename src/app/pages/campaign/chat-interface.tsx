@@ -207,6 +207,7 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
       <div className="shrink-0 border-t border-border p-5 max-[759px]:p-4">
         <div className="flex gap-2.5">
           <Input
+            maxLength={2000}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}

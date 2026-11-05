@@ -18,6 +18,7 @@ describe("Discord login state", () => {
     expect(url.origin + url.pathname).toBe("https://discord.com/oauth2/authorize");
     expect(url.searchParams.get("state")).toBe("abc123");
     expect(url.searchParams.get("response_type")).toBe("code");
+    expect(url.searchParams.get("scope")).toBe("identify");
   });
 
   it("starts a login with a fresh random state, kept for the callback", () => {

@@ -162,6 +162,7 @@ export function CharacterCreation() {
               <Label htmlFor="char-name" className={LABEL}>Character name</Label>
               <Input
                 id="char-name"
+                maxLength={60}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter your character's name"
@@ -173,6 +174,7 @@ export function CharacterCreation() {
               <Label htmlFor="char-description" className={LABEL}>Description</Label>
               <Textarea
                 id="char-description"
+                maxLength={2000}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe your character — background, personality, appearance..."
@@ -250,7 +252,7 @@ export function CharacterCreation() {
                       }
                       className={`h-10 w-[72px] tabular-nums ${FIELD}`}
                       min="1"
-                      max="20"
+                      max="10"
                       disabled={!statsGenerated}
                       placeholder={statsGenerated ? undefined : "—"}
                     />
