@@ -30,8 +30,13 @@ src/
         index.tsx
         play-header.tsx
         art-band.tsx
-        chat-interface.tsx         # Streams turns (SSE) and renders story items: messages, roll cards, errors
+        chat-interface.tsx         # Streams turns and combat rounds (SSE); story items: messages, roll and round cards, notes, errors; the action box, combat buttons, Rest, or the death message
         roll-card.tsx              # Live d20 check result; narration is held until it settles
+        round-card.tsx             # A combat round's rolls (player, then each enemy); holds narration and HP until it settles
+        combat-actions.tsx         # Replaces the action box during a fight: your HP, enemy targets with HP, Attack / Defend / Flee
+        health-bar.tsx             # HP meter (ember), used on the sheet and in fights
+        rest-overlay.tsx           # The campfire rest: covers the story for the server's rest time, then heals
+        campfire.tsx               # The animated campfire (still under reduced motion)
         character-sheet.tsx
         notes-section.tsx
       campaign-list.tsx
@@ -118,7 +123,8 @@ Output (screenshots at desktop, tablet, mobile, and RESULT lines) goes under `.t
 
 - **API calls go through `apiFetch` (`src/app/api/http.ts`).** The session is an httpOnly cookie the browser sends itself; page code never sees or stores a token, so never put one in `localStorage`. `apiFetch` adds `X-Requested-With: dungeon-web`, which the API requires on writes. Sign-in state comes from `/api/auth/me`; preview mode stubs it. Saving a character sends only the `preview_token` from `/characters/preview` (the server signed the generated stats; the page shows them read-only and asks to generate again if the details change). Discord sign-in must go through `startDiscordLogin()`: it stores a random OAuth `state`, and `/auth/callback` refuses any code whose state this browser didn't store (login CSRF).
 - **No AI calls from the frontend.** All DM responses go through `dungeon-service` (FastAPI at `../dungeon-service`).
-- **Turns stream.** `src/app/api/turn-stream.ts` posts to `/api/characters/{id}/turns/stream` and parses Server-Sent Events (`thinking`, `roll`, `text`, `done`, `error`). Dice are rolled on the server; the frontend only animates the result. Rolls are not stored, so reloaded history shows narration only.
+- **Turns stream.** `src/app/api/turn-stream.ts` posts to `/api/characters/{id}/turns/stream` and parses Server-Sent Events (`thinking`, `roll`, `text`, `combat`, `done`, `error`; combat rounds add `round`). Dice are rolled on the server; the frontend only animates the result. Rolls are not stored, so reloaded history shows narration only.
+- **Combat and health come from the server.** When the DM starts a fight the turn stream sends `combat` (the encounter: enemies with HP, the player's HP). While a fight is active the action box becomes `CombatActions`; each button posts to `/api/characters/{id}/combat/stream` (`streamCombatRound`), which sends `round` (every roll, already saved), `combat` (HP after it), then narration. The page applies a round's `combat` state only when its `RoundCard` settles, so bars don't give the outcome away; if narration fails the round still stands and its state is applied at once. `src/app/pages/campaign/index.tsx` holds the character and encounter (`GET /api/characters/{id}/encounter` on load) and updates the character's HP from every `combat` event. A dead character (`died_at`) gets a closing message instead of the action box. **Rest** (shown when wounded, outside fights) calls `/rest`, and `RestOverlay` counts down the server's `seconds_left`, then calls `/rest/finish`; the server refuses an early finish, so never shorten the wait in the UI. A reload during a rest resumes it (`rest_started_at` on the character). Preview mode: `?preview=1&fight=1` opens an adventure mid-fight; the preview character is wounded, so Rest shows.
 - **Prefer shadcn/ui components** over MUI. MUI is a legacy dependency from the Figma export; avoid adding new MUI usage.
 - **Tailwind for all styling.** No inline styles or CSS modules.
 - **`@` alias** maps to `src/` — use `@/app/components/...` for imports.

@@ -2,6 +2,8 @@ import {
   PREVIEW_CAMPAIGNS,
   PREVIEW_CHARACTERS,
   PREVIEW_CLASSES,
+  PREVIEW_ENCOUNTER,
+  PREVIEW_ROUND_STREAM,
   PREVIEW_RACES,
   PREVIEW_TURN_STREAM,
   PREVIEW_TURNS,
@@ -20,7 +22,30 @@ function json(body: unknown): Response {
   });
 }
 
+// ?preview=1&fight=1 starts the adventure page in the middle of a fight.
+const previewFight = (): boolean => new URLSearchParams(window.location.search).get("fight") === "1";
+
 function stubResponse(path: string, method: string): Response | null {
+  if (method === "GET" && /^\/api\/characters\/\d+\/encounter$/.test(path)) {
+    return json(previewFight() ? PREVIEW_ENCOUNTER : null);
+  }
+  if (method === "POST" && /^\/api\/characters\/\d+\/combat\/stream$/.test(path)) {
+    return new Response(PREVIEW_ROUND_STREAM, { status: 200, headers: { "Content-Type": "text/event-stream" } });
+  }
+  if (method === "POST" && /^\/api\/characters\/\d+\/rest$/.test(path)) {
+    const now = new Date();
+    return json({
+      started_at: now.toISOString(),
+      ready_at: new Date(now.getTime() + 20_000).toISOString(),
+      seconds: 20,
+      seconds_left: 20,
+    });
+  }
+  const finish = path.match(/^\/api\/characters\/(\d+)\/rest\/finish$/);
+  if (method === "POST" && finish) {
+    const match = PREVIEW_CHARACTERS.find((c) => c.character.id === Number(finish[1]));
+    if (match) return json({ ...match.character, current_hp: match.character.max_hp, rest_started_at: null });
+  }
   if (method === "GET") {
     if (path === "/api/auth/me") return json(PREVIEW_USER);
     if (path === "/api/characters/") return json(PREVIEW_CHARACTERS);

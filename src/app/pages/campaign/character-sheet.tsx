@@ -1,4 +1,5 @@
 import type { Character } from "@/app/api/characters";
+import { HealthBar } from "./health-bar";
 
 interface CharacterSheetProps {
   character: Character;
@@ -26,6 +27,14 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
       <p className="mb-[18px] text-[15px] text-muted-foreground">
         {character.hero_class} · Age <span className="tabular-nums">{character.age}</span>
       </p>
+
+      <div className="mb-[18px]">
+        {character.died_at ? (
+          <p className="m-0 text-[15px] font-semibold text-ember">Dead</p>
+        ) : (
+          <HealthBar label="Health" hp={character.current_hp} max={character.max_hp} />
+        )}
+      </div>
 
       <dl className="m-0 grid grid-cols-[1fr_auto] gap-y-1.5 text-[15px]">
         {(Object.keys(STAT_LABELS) as StatKey[]).map((stat) => (

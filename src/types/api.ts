@@ -100,8 +100,106 @@ export interface paths {
         /** Get Turns */
         get: operations["get_turns_characters__id__turns_get"];
         put?: never;
-        /** Play Turn */
-        post: operations["play_turn_characters__id__turns_post"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/characters/{id}/turns/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Play Turn Stream */
+        post: operations["play_turn_stream_characters__id__turns_stream_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/characters/{id}/encounter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Encounter
+         * @description The character's active fight, or null.
+         */
+        get: operations["get_encounter_characters__id__encounter_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/characters/{id}/combat/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Play Combat Round
+         * @description One combat round: the server rolls and applies it (committed before the DM
+         *     narrates), then streams `round`, `combat`, `text` and `done`.
+         */
+        post: operations["play_combat_round_characters__id__combat_stream_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/characters/{id}/rest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rest
+         * @description Start resting, or get the rest already under way: `seconds_left` until
+         *     POST .../rest/finish heals. No Claude call, so no rate limit.
+         */
+        post: operations["rest_characters__id__rest_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/characters/{id}/rest/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Finish Resting
+         * @description Heal to full, once the rest has lasted long enough (409 before that).
+         */
+        post: operations["finish_resting_characters__id__rest_finish_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -143,6 +241,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/campaigns/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Campaign */
+        delete: operations["delete_campaign_campaigns__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/discord/callback": {
         parameters: {
             query?: never;
@@ -154,6 +269,46 @@ export interface paths {
         put?: never;
         /** Discord Callback */
         post: operations["discord_callback_auth_discord_callback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Me
+         * @description Who is signed in; the frontend asks this since it cannot read the cookie.
+         */
+        get: operations["me_auth_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Logout
+         * @description End every session for this user and clear this browser's cookie.
+         */
+        post: operations["logout_auth_logout_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -197,6 +352,37 @@ export interface components {
             /** Description */
             description: string;
         };
+        /** CampaignCheckpointRead */
+        CampaignCheckpointRead: {
+            /** Id */
+            id: number | null;
+            /** Checkpoint Id */
+            checkpoint_id: number;
+            /** Order */
+            order: number;
+            /** Status */
+            status: string;
+            /** Summary */
+            summary: string | null;
+        };
+        /**
+         * CampaignWithDetails
+         * @description A campaign with the current user's characters in it and its checkpoints in order.
+         */
+        CampaignWithDetails: {
+            /** Id */
+            id: number | null;
+            /** Name */
+            name: string;
+            /** Theme */
+            theme: string;
+            /** Description */
+            description: string;
+            /** Characters */
+            characters: components["schemas"]["Character"][];
+            /** Campaign Checkpoints */
+            campaign_checkpoints: components["schemas"]["CampaignCheckpointRead"][];
+        };
         /** Character */
         Character: {
             /** Name */
@@ -229,6 +415,20 @@ export interface components {
             agility: number | null;
             /** Luck */
             luck: number | null;
+            /**
+             * Max Hp
+             * @default 20
+             */
+            max_hp: number;
+            /**
+             * Current Hp
+             * @default 20
+             */
+            current_hp: number;
+            /** Died At */
+            died_at?: string | null;
+            /** Rest Started At */
+            rest_started_at?: string | null;
         };
         /** CharacterDescriptionCreate */
         CharacterDescriptionCreate: {
@@ -240,6 +440,29 @@ export interface components {
             hero_class: string;
             /** Race */
             race: string;
+        };
+        /**
+         * CharacterSaveRequest
+         * @description Saving a character sends only the token from its preview; the server saves the
+         *     sheet it generated and signed, so stats can't be chosen by the client.
+         */
+        CharacterSaveRequest: {
+            /** Preview Token */
+            preview_token: string;
+        };
+        /**
+         * CombatActionRequest
+         * @description A combat button. `target_id` is a combatant id; attacks without one hit the
+         *     first enemy still standing.
+         */
+        CombatActionRequest: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "attack" | "defend" | "flee";
+            /** Target Id */
+            target_id?: number | null;
         };
         /** CreateCampaignRequest */
         CreateCampaignRequest: {
@@ -300,10 +523,17 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** TurnResponse */
-        TurnResponse: {
-            /** Message */
-            message: string;
+        /**
+         * UserPublic
+         * @description What the API says about a user: never discord_id or token_version.
+         */
+        UserPublic: {
+            /** Id */
+            id: number;
+            /** Username */
+            username: string;
+            /** Avatar Url */
+            avatar_url: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -313,6 +543,10 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
     };
     responses: never;
@@ -352,7 +586,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Character"];
+                "application/json": components["schemas"]["CharacterSaveRequest"];
             };
         };
         responses: {
@@ -511,7 +745,7 @@ export interface operations {
             };
         };
     };
-    play_turn_characters__id__turns_post: {
+    play_turn_stream_characters__id__turns_stream_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -527,12 +761,144 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TurnResponse"];
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_encounter_characters__id__encounter_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    } | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    play_combat_round_characters__id__combat_stream_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CombatActionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rest_characters__id__rest_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    finish_resting_characters__id__rest_finish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Character"];
                 };
             };
             /** @description Validation Error */
@@ -561,7 +927,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["CampaignWithDetails"][];
                 };
             };
         };
@@ -630,6 +996,35 @@ export interface operations {
             };
         };
     };
+    delete_campaign_campaigns__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     discord_callback_auth_discord_callback_post: {
         parameters: {
             query?: never;
@@ -649,7 +1044,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        [key: string]: components["schemas"]["UserPublic"];
+                    };
                 };
             };
             /** @description Validation Error */
@@ -660,6 +1057,44 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    me_auth_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserPublic"];
+                };
+            };
+        };
+    };
+    logout_auth_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

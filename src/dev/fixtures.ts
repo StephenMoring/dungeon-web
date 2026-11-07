@@ -33,6 +33,8 @@ const stats = {
   intelligence: 5,
   agility: 6,
   luck: 3,
+  max_hp: 22,
+  current_hp: 22,
 };
 
 export const PREVIEW_CHARACTERS: CharacterWithCampaign[] = [
@@ -47,6 +49,7 @@ export const PREVIEW_CHARACTERS: CharacterWithCampaign[] = [
       campaign_id: 7,
       user_id: 1,
       ...stats,
+      current_hp: 13,
     },
     campaign: PREVIEW_CAMPAIGNS[0],
   },
@@ -141,4 +144,65 @@ export const PREVIEW_TURN_STREAM: string = [
   sseEvent("text", { text: "Beneath the dog's paws one flagstone sits proud of the rest. " }),
   sseEvent("text", { text: "You lever it up: a rusted key, wrapped in a bell-ringer's glove. What do you do?" }),
   sseEvent("done", { message_id: 999 }),
+].join("");
+
+/** A fight in progress, shown with ?preview=1&fight=1. */
+export const PREVIEW_ENCOUNTER = {
+  id: 1,
+  status: "active",
+  round: 1,
+  enemies: [
+    { id: 11, name: "Goblin 1", kind: "goblin", hp: 0, max_hp: 7 },
+    { id: 12, name: "Goblin 2", kind: "goblin", hp: 4, max_hp: 7 },
+    { id: 13, name: "Grisk the One-Eyed", kind: "bandit_captain", hp: 24, max_hp: 24 },
+  ],
+  player: { hp: 13, max_hp: 22, defense: 13, dead: false },
+};
+
+export const PREVIEW_ROUND_STREAM: string = [
+  sseEvent("round", {
+    round: 2,
+    action: "attack",
+    character: "Aldric of Vézelay",
+    attack: {
+      attacker: "Aldric of Vézelay",
+      target: "Goblin 2",
+      roll: 14,
+      bonus: 7,
+      total: 21,
+      defense: 11,
+      hit: true,
+      crit: false,
+      damage: 6,
+      target_hp: 0,
+      target_max_hp: 7,
+    },
+    flee: null,
+    defended: false,
+    enemy_attacks: [
+      {
+        attacker: "Grisk the One-Eyed",
+        target: "Aldric of Vézelay",
+        roll: 16,
+        bonus: 5,
+        total: 21,
+        defense: 13,
+        hit: true,
+        crit: false,
+        damage: 7,
+        target_hp: 6,
+        target_max_hp: 22,
+      },
+    ],
+    outcome: "active",
+  }),
+  sseEvent("combat", {
+    ...PREVIEW_ENCOUNTER,
+    round: 2,
+    enemies: PREVIEW_ENCOUNTER.enemies.map((enemy) => (enemy.id === 12 ? { ...enemy, hp: 0 } : enemy)),
+    player: { ...PREVIEW_ENCOUNTER.player, hp: 6 },
+  }),
+  sseEvent("text", { text: "Your blade opens the second goblin from hip to shoulder. " }),
+  sseEvent("text", { text: "Grisk answers with a backhand of his sabre that lays your forearm open. What do you do?" }),
+  sseEvent("done", { message_id: 1000 }),
 ].join("");

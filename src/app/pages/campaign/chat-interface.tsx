@@ -1,27 +1,59 @@
 import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router";
 import { Input } from "@/app/components/ui/input";
 import { motion, AnimatePresence } from "motion/react";
 import ReactMarkdown from "react-markdown";
-import { streamTurn } from "@/app/api/turn-stream";
-import type { Roll } from "@/app/api/turn-stream";
+import { streamCombatRound, streamTurn } from "@/app/api/turn-stream";
+import type { CombatAction, CombatRound, EncounterState, Roll, TurnStreamEvent } from "@/app/api/turn-stream";
+import { startRest, type RestState } from "@/app/api/combat";
+import type { Character } from "@/app/api/characters";
 import { RollCard } from "./roll-card";
+import { RoundCard } from "./round-card";
+import { CombatActions } from "./combat-actions";
+import { RestOverlay } from "./rest-overlay";
 import { apiFetch } from "@/app/api/http";
 
 const FOCUS = "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gold focus-visible:ring-0";
-
+const SECONDARY = `h-11 shrink-0 rounded-[4px] border border-input bg-raised px-[18px] text-base font-semibold text-foreground transition-[filter] hover:brightness-125 disabled:opacity-60 disabled:hover:brightness-100 ${FOCUS}`;
 
 type StoryItem =
   | { kind: "message"; id: string; role: "user" | "dm"; content: string; timestamp: Date }
   | { kind: "roll"; id: string; roll: Roll }
+  | { kind: "round"; id: string; round: CombatRound }
+  | { kind: "note"; id: string; content: string }
   | { kind: "error"; id: string; content: string };
 
 interface ChatInterfaceProps {
   openingMessage?: string | null;
   characterId?: number | null;
+  /** The character as loaded: hit points, death and resting come from here. */
+  character?: Character | null;
+  /** The active fight, or null. */
+  encounter?: EncounterState | null;
+  /** A fight started, a round changed hit points, or a fight ended. */
+  onEncounter?: (encounter: EncounterState) => void;
+  /** The server sent back the character, e.g. healed after resting. */
+  onCharacter?: (character: Character) => void;
   onUserMessage?: (message: string) => void;
 }
 
-export function ChatInterface({ openingMessage, characterId, onUserMessage }: ChatInterfaceProps) {
+/** The player's line for a combat button, as the server saves it. */
+function actionText(action: CombatAction, encounter: EncounterState, targetId: number | null): string {
+  if (action === "defend") return "I raise my guard and defend.";
+  if (action === "flee") return "I try to escape.";
+  const target = encounter.enemies.find((enemy) => enemy.id === targetId);
+  return target ? `I attack ${target.name}.` : "I attack.";
+}
+
+export function ChatInterface({
+  openingMessage,
+  characterId,
+  character,
+  encounter,
+  onEncounter,
+  onCharacter,
+  onUserMessage,
+}: ChatInterfaceProps) {
   const [messages, setMessages] = useState<StoryItem[]>(
     openingMessage
       ? [{ kind: "message", id: "1", role: "dm", content: openingMessage, timestamp: new Date() }]
@@ -30,12 +62,19 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
-  // While a live roll animates, narration is held here so the outcome isn't spoiled.
+  const [rest, setRest] = useState<RestState | null>(null);
+  // While live dice animate, narration (and a round's hit points) are held here so
+  // the outcome isn't spoiled.
   const dmIdRef = useRef<string | null>(null);
   const heldRef = useRef(false);
   const pendingRef = useRef("");
+  const pendingCombatRef = useRef<EncounterState | null>(null);
   const [historyLoaded, setHistoryLoaded] = useState(!!openingMessage);
   const listRef = useRef<HTMLDivElement>(null);
+
+  const dead = character?.died_at != null;
+  const inFight = !!encounter && encounter.status === "active" && !dead;
+  const wounded = !!character && character.current_hp < character.max_hp;
 
   useEffect(() => {
     if (!characterId || historyLoaded) return;
@@ -54,6 +93,13 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
       .catch(console.error);
   }, [characterId, historyLoaded]);
 
+  // A rest left running (e.g. the page was reloaded by the fire) picks up where it was.
+  const restStartedAt = character?.rest_started_at;
+  useEffect(() => {
+    if (!characterId || !restStartedAt || rest) return;
+    startRest(characterId).then(setRest).catch(console.error);
+  }, [characterId, restStartedAt, rest]);
+
   useEffect(() => {
     // Scroll the story pane itself, so the page around it never jumps.
     const list = listRef.current;
@@ -70,9 +116,8 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
     );
   };
 
-  const insertRoll = (roll: Roll) => {
+  const insertCard = (item: StoryItem) => {
     const dmId = dmIdRef.current;
-    const item: StoryItem = { kind: "roll", id: `roll-${dmId}`, roll };
     setMessages((prev) => {
       // The card sits above this turn's narration, even if some text already arrived.
       const index = prev.findIndex((m) => m.id === dmId);
@@ -80,63 +125,113 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
     });
   };
 
-  const handleRollSettled = () => {
+  const flushCombat = () => {
+    const pending = pendingCombatRef.current;
+    pendingCombatRef.current = null;
+    if (pending) onEncounter?.(pending);
+  };
+
+  const handleCardSettled = () => {
     heldRef.current = false;
     const pending = pendingRef.current;
     pendingRef.current = "";
     appendDm(pending);
+    flushCombat();
   };
 
-  const handleSend = async () => {
-    const text = input;
-    if (!text.trim() || !characterId || isStreaming) return;
+  const addError = (id: string, content: string) =>
+    setMessages((prev) => [...prev, { kind: "error", id: `error-${id}`, content }]);
 
+  /** Shows a turn or round as it streams. Returns false if it failed. */
+  const play = async (userText: string, events: AsyncGenerator<TurnStreamEvent>): Promise<boolean> => {
     const now = Date.now();
     dmIdRef.current = `dm-${now}`;
     heldRef.current = false;
     pendingRef.current = "";
+    pendingCombatRef.current = null;
 
     setMessages((prev) => [
       ...prev,
-      { kind: "message", id: `user-${now}`, role: "user", content: text, timestamp: new Date() },
+      { kind: "message", id: `user-${now}`, role: "user", content: userText, timestamp: new Date() },
     ]);
-    onUserMessage?.(text);
-    setInput("");
     setIsTyping(true);
     setIsStreaming(true);
 
+    let ok = true;
     try {
-      for await (const event of streamTurn(characterId, text)) {
+      for await (const event of events) {
         if (event.type === "roll") {
           setIsTyping(false);
           heldRef.current = true;
-          insertRoll(event.roll);
+          insertCard({ kind: "roll", id: `roll-${dmIdRef.current}`, roll: event.roll });
+        } else if (event.type === "round") {
+          heldRef.current = true;
+          insertCard({ kind: "round", id: `round-${dmIdRef.current}`, round: event.round });
+        } else if (event.type === "combat") {
+          if (heldRef.current) pendingCombatRef.current = event.encounter;
+          else onEncounter?.(event.encounter);
         } else if (event.type === "text") {
           setIsTyping(false);
           if (heldRef.current) pendingRef.current += event.text;
           else appendDm(event.text);
         } else if (event.type === "error") {
-          // The turn wasn't saved, so held narration must not appear when the dice settle.
+          // Nothing was saved, so held narration must not appear when the dice settle.
+          // A combat round's hit points were saved, though: show them now.
+          ok = false;
           heldRef.current = false;
           pendingRef.current = "";
           dmIdRef.current = null;
-          setMessages((prev) => [...prev, { kind: "error", id: `error-${now}`, content: event.detail }]);
-          setInput(text);
+          flushCombat();
+          addError(String(now), event.detail);
         }
       }
     } catch (error) {
+      ok = false;
       heldRef.current = false;
       pendingRef.current = "";
       dmIdRef.current = null;
-      setMessages((prev) => [
-        ...prev,
-        { kind: "error", id: `error-${now}`, content: error instanceof Error ? error.message : "Something went wrong" },
-      ]);
-      setInput(text);
+      flushCombat();
+      addError(String(now), error instanceof Error ? error.message : "Something went wrong");
     } finally {
       setIsTyping(false);
       setIsStreaming(false);
     }
+    return ok;
+  };
+
+  const handleSend = async () => {
+    const text = input;
+    if (!text.trim() || !characterId || isStreaming) return;
+    onUserMessage?.(text);
+    setInput("");
+    const ok = await play(text, streamTurn(characterId, text));
+    if (!ok) setInput(text);
+  };
+
+  const handleCombat = async (action: CombatAction, targetId: number | null) => {
+    if (!characterId || !encounter || isStreaming) return;
+    await play(actionText(action, encounter, targetId), streamCombatRound(characterId, action, targetId));
+  };
+
+  const handleRest = () => {
+    if (!characterId || isStreaming) return;
+    startRest(characterId)
+      .then(setRest)
+      .catch((error: unknown) => addError(String(Date.now()), error instanceof Error ? error.message : "Couldn't make camp"));
+  };
+
+  const handleRested = (healed: Character) => {
+    setRest(null);
+    onCharacter?.(healed);
+    setMessages((prev) => [
+      ...prev,
+      { kind: "note", id: `rest-${Date.now()}`, content: `You rest by the fire. Health restored to ${healed.current_hp} / ${healed.max_hp}.` },
+    ]);
+  };
+
+  const handleRestFailed = (message: string) => {
+    setRest(null);
+    addError(String(Date.now()), message);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -157,10 +252,18 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
             {messages.map((message) =>
               message.kind === "roll" ? (
                 <motion.div key={message.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                  <RollCard roll={message.roll} animate onSettled={handleRollSettled} />
+                  <RollCard roll={message.roll} animate onSettled={handleCardSettled} />
+                </motion.div>
+              ) : message.kind === "round" ? (
+                <motion.div key={message.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                  <RoundCard round={message.round} animate onSettled={handleCardSettled} />
                 </motion.div>
               ) : message.kind === "error" ? (
                 <p key={message.id} role="alert" className="max-w-[62ch] text-[15px] text-destructive">
+                  {message.content}
+                </p>
+              ) : message.kind === "note" ? (
+                <p key={message.id} className="max-w-[62ch] text-[15px] italic text-muted-foreground">
                   {message.content}
                 </p>
               ) : (
@@ -205,30 +308,51 @@ export function ChatInterface({ openingMessage, characterId, onUserMessage }: Ch
         </div>
       </div>
       <div className="shrink-0 border-t border-border p-5 max-[759px]:p-4">
-        <div className="flex gap-2.5">
-          <Input
-            maxLength={2000}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            // readOnly, not disabled: disabling would blur the box and lose focus every turn.
-            readOnly={isStreaming}
-            aria-disabled={isStreaming}
-            aria-label="Your action"
-            placeholder="What do you do?"
-            className={`h-11 flex-1 rounded-[4px] border-input bg-raised px-3.5 text-[15px] placeholder:text-faint dark:bg-raised md:text-[15px] ${FOCUS}`}
-          />
-          <motion.button
-            type="button"
-            onClick={handleSend}
-            disabled={isStreaming}
-            whileTap={{ y: 1 }}
-            className={`h-11 shrink-0 rounded-[4px] bg-gold px-[22px] text-base font-semibold text-primary-foreground transition-[filter] hover:brightness-110 disabled:opacity-60 disabled:hover:brightness-100 ${FOCUS}`}
-          >
-            Act
-          </motion.button>
-        </div>
+        {dead ? (
+          <div role="status" className="flex flex-wrap items-center justify-between gap-3">
+            <p className="m-0 text-base text-foreground">
+              <span className="font-display text-xl">{character?.name}</span> has died. Their story is over.
+            </p>
+            <Link to="/dashboard" className={`inline-flex items-center ${SECONDARY}`}>
+              Back to your heroes
+            </Link>
+          </div>
+        ) : inFight && encounter ? (
+          <CombatActions encounter={encounter} disabled={isStreaming} onAction={handleCombat} />
+        ) : (
+          <div className="flex gap-2.5">
+            <Input
+              maxLength={2000}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              // readOnly, not disabled: disabling would blur the box and lose focus every turn.
+              readOnly={isStreaming}
+              aria-disabled={isStreaming}
+              aria-label="Your action"
+              placeholder="What do you do?"
+              className={`h-11 flex-1 rounded-[4px] border-input bg-raised px-3.5 text-[15px] placeholder:text-faint dark:bg-raised md:text-[15px] ${FOCUS}`}
+            />
+            {wounded && (
+              <motion.button type="button" onClick={handleRest} disabled={isStreaming} whileTap={{ y: 1 }} className={SECONDARY}>
+                Rest
+              </motion.button>
+            )}
+            <motion.button
+              type="button"
+              onClick={handleSend}
+              disabled={isStreaming}
+              whileTap={{ y: 1 }}
+              className={`h-11 shrink-0 rounded-[4px] bg-gold px-[22px] text-base font-semibold text-primary-foreground transition-[filter] hover:brightness-110 disabled:opacity-60 disabled:hover:brightness-100 ${FOCUS}`}
+            >
+              Act
+            </motion.button>
+          </div>
+        )}
       </div>
+      {rest && characterId && !dead && (
+        <RestOverlay characterId={characterId} rest={rest} onRested={handleRested} onFailed={handleRestFailed} />
+      )}
     </>
   );
 }

@@ -11,6 +11,7 @@ const charactersApi = vi.hoisted(() => ({ getCharacter: vi.fn() }));
 
 vi.mock("@/app/api/campaigns", () => campaignsApi);
 vi.mock("@/app/api/characters", () => charactersApi);
+vi.mock("@/app/api/combat", () => ({ getEncounter: vi.fn().mockResolvedValue(null), startRest: vi.fn(), finishRest: vi.fn() }));
 
 const DARIAN = {
   id: 1,
@@ -28,6 +29,8 @@ const DARIAN = {
   intelligence: 6,
   agility: 9,
   luck: 7,
+  max_hp: 20,
+  current_hp: 20,
 };
 
 function renderAdventure() {

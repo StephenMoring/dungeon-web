@@ -19,6 +19,8 @@ const CHARACTER: Character = {
   intelligence: 6,
   agility: 9,
   luck: 7,
+  max_hp: 20,
+  current_hp: 13,
 };
 
 describe("CharacterSheet", () => {
@@ -47,5 +49,19 @@ describe("CharacterSheet", () => {
     render(<CharacterSheet character={CHARACTER} />);
     expect(screen.getByText("Lean and sharp-eyed.")).toBeInTheDocument();
     expect(screen.getByText("Grew up picking pockets in Calrath.")).toBeInTheDocument();
+  });
+
+  it("shows health as a meter", () => {
+    render(<CharacterSheet character={CHARACTER} />);
+    const meter = screen.getByRole("meter", { name: "Health" });
+    expect(meter).toHaveAttribute("aria-valuenow", "13");
+    expect(meter).toHaveAttribute("aria-valuemax", "20");
+    expect(screen.getByText("13 / 20")).toBeInTheDocument();
+  });
+
+  it("marks a dead character instead of a health bar", () => {
+    render(<CharacterSheet character={{ ...CHARACTER, current_hp: 0, died_at: "2026-11-06T21:53:23Z" }} />);
+    expect(screen.getByText("Dead")).toBeInTheDocument();
+    expect(screen.queryByRole("meter")).not.toBeInTheDocument();
   });
 });

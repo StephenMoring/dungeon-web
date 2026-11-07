@@ -3,6 +3,8 @@ import { MotionConfig } from "motion/react";
 import { useParams, useLocation } from "react-router";
 import { getCampaignCharacterId, getCampaigns, type Campaign as CampaignRecord } from "@/app/api/campaigns";
 import { getCharacter, type Character } from "@/app/api/characters";
+import { getEncounter } from "@/app/api/combat";
+import type { EncounterState } from "@/app/api/turn-stream";
 import { LoadError } from "@/app/components/shared/load-error";
 import { CharacterSheet } from "./character-sheet";
 import { ChatInterface } from "./chat-interface";
@@ -52,6 +54,36 @@ export function Campaign() {
     };
   }, [characterId, characterAttempt]);
 
+  const [encounter, setEncounter] = useState<EncounterState | null>(null);
+
+  useEffect(() => {
+    if (characterId == null) return;
+    let cancelled = false;
+    getEncounter(characterId)
+      .then((loaded) => {
+        if (!cancelled) setEncounter(loaded);
+      })
+      .catch(console.error);
+    return () => {
+      cancelled = true;
+    };
+  }, [characterId]);
+
+  // Hit points live on the server; every fight update carries the player's too.
+  const handleEncounter = (next: EncounterState) => {
+    setEncounter(next.status === "active" ? next : null);
+    setCharacter((current) =>
+      current
+        ? {
+            ...current,
+            current_hp: next.player.hp,
+            max_hp: next.player.max_hp,
+            died_at: next.player.dead ? (current.died_at ?? new Date().toISOString()) : current.died_at,
+          }
+        : current
+    );
+  };
+
   const [notes, setNotes] = useState(
     "- Entered ancient dungeon\n- Two paths: north (water sounds) and east (red glow)\n"
   );
@@ -77,9 +109,16 @@ export function Campaign() {
 
           <section
             aria-label="Story"
-            className={`${PANE} flex flex-col overflow-hidden min-[760px]:max-[1099px]:col-start-2 min-[760px]:max-[1099px]:row-span-2 min-[760px]:max-[1099px]:row-start-1 max-[759px]:order-first max-[759px]:max-h-[max(440px,80svh)] max-[759px]:min-h-[420px]`}
+            className={`${PANE} relative flex flex-col overflow-hidden min-[760px]:max-[1099px]:col-start-2 min-[760px]:max-[1099px]:row-span-2 min-[760px]:max-[1099px]:row-start-1 max-[759px]:order-first max-[759px]:max-h-[max(440px,80svh)] max-[759px]:min-h-[420px]`}
           >
-            <ChatInterface openingMessage={openingMessage} characterId={characterId} />
+            <ChatInterface
+              openingMessage={openingMessage}
+              characterId={characterId}
+              character={character}
+              encounter={encounter}
+              onEncounter={handleEncounter}
+              onCharacter={setCharacter}
+            />
           </section>
 
           <aside
