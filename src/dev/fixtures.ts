@@ -108,10 +108,24 @@ export const PREVIEW_TURNS: MessageHistory[] = [
     id: 3,
     role: "dm",
     content:
-      "The dog lifts its head and does not bark. Roll for Perception. 7 The courtyard is too dark to read. Somewhere above, in the tower, a single window is lit.",
+      "The dog lifts its head and does not bark. The courtyard is too dark to read, but somewhere above, in the tower, a single window is lit.",
     created_at: "2026-10-22T18:02:00Z",
   },
 ];
+
+/** What "Generate" returns in preview mode (the server would sign the token). */
+export const PREVIEW_CHARACTER_SHEET = {
+  preview_token: "preview",
+  biography: "Born under the bell of Saint-Lazare, she buried her brothers in the plague year and took up the rope they left behind.",
+  age: 29,
+  strength: 5,
+  perception: 8,
+  endurance: 6,
+  charisma: 4,
+  intelligence: 7,
+  agility: 6,
+  luck: 5,
+};
 
 export const PREVIEW_CLASSES: HeroClass[] = [
   { id: 1, class_name: "Sellsword", description: "A hired blade, fed on coin and old grudges." },

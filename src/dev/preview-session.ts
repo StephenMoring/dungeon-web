@@ -1,6 +1,7 @@
 import {
   PREVIEW_CAMPAIGNS,
   PREVIEW_CHARACTERS,
+  PREVIEW_CHARACTER_SHEET,
   PREVIEW_CLASSES,
   PREVIEW_ENCOUNTER,
   PREVIEW_ROUND_STREAM,
@@ -65,6 +66,7 @@ function stubResponse(path: string, method: string): Response | null {
       if (match) return json(match.character);
     }
   }
+  if (method === "POST" && path === "/api/characters/preview") return json(PREVIEW_CHARACTER_SHEET);
   if (method === "POST" && path === "/api/auth/logout") return new Response(null, { status: 204 });
   if (method === "POST" && /^\/api\/characters\/\d+\/turns\/stream$/.test(path)) {
     return new Response(PREVIEW_TURN_STREAM, { status: 200, headers: { "Content-Type": "text/event-stream" } });
